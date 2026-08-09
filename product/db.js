@@ -1,4 +1,4 @@
-const DB_NAME='tagro-irrigation-os';const DB_VERSION=1;const STORES=['projects','facts','features','events','settings'];
+const DB_NAME='tagro-irrigation-os';const DB_VERSION=2;const STORES=['projects','facts','features','events','annotations','settings'];
 function openDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(DB_NAME,DB_VERSION);r.onupgradeneeded=()=>{const db=r.result;for(const s of STORES){if(!db.objectStoreNames.contains(s)){const st=db.createObjectStore(s,{keyPath:'id'});if(s!=='settings')st.createIndex('projectId','projectId',{unique:false});}}};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
 async function tx(store,mode='readonly'){const db=await openDB();return db.transaction(store,mode).objectStore(store)}
 export async function put(store,value){const st=await tx(store,'readwrite');return new Promise((res,rej)=>{const r=st.put(value);r.onsuccess=()=>res(value);r.onerror=()=>rej(r.error);});}
@@ -6,7 +6,7 @@ export async function get(store,id){const st=await tx(store);return new Promise(
 export async function all(store){const st=await tx(store);return new Promise((res,rej)=>{const r=st.getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error);});}
 export async function byProject(store,projectId){const st=await tx(store);const ix=st.index('projectId');return new Promise((res,rej)=>{const r=ix.getAll(projectId);r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error);});}
 export async function remove(store,id){const st=await tx(store,'readwrite');return new Promise((res,rej)=>{const r=st.delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
-export async function clearProject(projectId){for(const s of ['facts','features','events']){for(const item of await byProject(s,projectId))await remove(s,item.id);}await remove('projects',projectId);}
-export async function exportProject(projectId){return{version:'1.0',exportedAt:new Date().toISOString(),project:await get('projects',projectId),facts:await byProject('facts',projectId),features:await byProject('features',projectId),events:await byProject('events',projectId)};}
-export async function importProject(bundle){if(!bundle?.project?.id)throw new Error('Invalid TAGRO project file');await put('projects',bundle.project);for(const s of ['facts','features','events'])for(const item of bundle[s]||[])await put(s,item);return bundle.project;}
+export async function clearProject(projectId){for(const s of ['facts','features','events','annotations']){for(const item of await byProject(s,projectId))await remove(s,item.id);}await remove('projects',projectId);}
+export async function exportProject(projectId){return{version:'1.1',exportedAt:new Date().toISOString(),project:await get('projects',projectId),facts:await byProject('facts',projectId),features:await byProject('features',projectId),events:await byProject('events',projectId),annotations:await byProject('annotations',projectId)};}
+export async function importProject(bundle){if(!bundle?.project?.id)throw new Error('Invalid TAGRO project file');await put('projects',bundle.project);for(const s of ['facts','features','events','annotations'])for(const item of bundle[s]||[])await put(s,item);return bundle.project;}
 export function id(prefix='id'){return `${prefix}_${crypto.randomUUID()}`;}
