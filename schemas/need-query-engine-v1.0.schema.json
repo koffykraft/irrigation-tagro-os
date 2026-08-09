@@ -1,0 +1,20 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://tagro.in/schemas/need-query-engine-v1.0.schema.json",
+  "title":"TAGRO Irrigation Need Query Engine v1.0",
+  "type":"object",
+  "required":["need","depth","taskProfile","facts","questions","result"],
+  "properties":{
+    "need":{"type":"object","required":["taskType","desiredOutcome"],"properties":{"taskType":{"type":"string"},"desiredOutcome":{"type":"string"},"affectedObjectIds":{"type":"array","items":{"type":"string"}},"workKind":{"enum":["new","existing","replacement","extension","diagnosis","estimate","review","unknown"]},"consequenceClass":{"enum":["low","normal","high","critical"]},"maturityTarget":{"enum":["indication","preliminary","design-checked","proposed","accepted","installed-review"]}}},
+    "depth":{"enum":["SUB_MINIMUM","MINIMUM","ADEQUATE","STRETCH","MAXIMUM"]},
+    "farmerEffort":{"type":"object","properties":{"preference":{"enum":["quick","normal","deep","unknown"]},"canMeasure":{"type":"boolean"},"canUseMap":{"type":"boolean"},"canPhotograph":{"type":"boolean"},"canDescribe":{"type":"boolean"},"notes":{"type":"string"}}},
+    "taskProfile":{"type":"object","required":["id","hardGates"],"properties":{"id":{"type":"string"},"hardGates":{"type":"array","items":{"type":"string"}},"optionalOptimizers":{"type":"array","items":{"type":"string"}},"surfaceHints":{"type":"array","items":{"type":"string"}}}},
+    "facts":{"type":"array","items":{"type":"object","required":["path","status"],"properties":{"path":{"type":"string"},"value":{},"status":{"enum":["unknown","observed","described","measured","inferred","confirmed","proposed","accepted","installed"]},"source":{"type":"string"},"captureMethod":{"enum":["choice","yes-no","number","speech","text","photo","map","draw","measure","sensor","document","calculation","external","previous-state"]},"confidence":{"type":"number","minimum":0,"maximum":1},"eventRef":{"type":"string"}}}},
+    "questions":{"type":"array","items":{"type":"object","required":["id","factPath","reason","priority","answerModes"],"properties":{"id":{"type":"string"},"factPath":{"type":"string"},"prompt":{"type":"string"},"reason":{"enum":["hard-gate","decision-changing","high-value-easy","optimization"]},"priority":{"type":"integer","minimum":1},"answerModes":{"type":"array","items":{"enum":["choose","tap","yes-no","number","speak","type","photograph","map","draw","measure"]}},"skippable":{"type":"boolean"},"depthRequired":{"enum":["SUB_MINIMUM","MINIMUM","ADEQUATE","STRETCH","MAXIMUM"]}}}},
+    "result":{"type":"object","required":["maturity","sufficiency"],"properties":{"maturity":{"enum":["INDICATION","PRELIMINARY","DESIGN-CHECKED","PROPOSED","ACCEPTED","INSTALLED"]},"sufficiency":{"enum":["blocked","sub-minimum","minimum","adequate","stretch","maximum"]},"hardGatesMissing":{"type":"array","items":{"type":"string"}},"unknowns":{"type":"array","items":{"type":"string"}},"canStop":{"type":"boolean"},"nextDepthOffer":{"type":"string"},"solutionRefs":{"type":"array","items":{"type":"string"}}}},
+    "events":{"type":"array","items":{"type":"string"}},
+    "ripples":{"type":"array","items":{"type":"string"}},
+    "shadowRefs":{"type":"array","items":{"type":"string"}}
+  },
+  "additionalProperties":true
+}
