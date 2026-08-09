@@ -1,0 +1,31 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://tagro.in/schemas/irrigation-domain-v0.1.schema.json",
+  "title":"TAGRO Irrigation Domain v0.1",
+  "type":"object",
+  "required":["id","type","version","status","provenance"],
+  "properties":{
+    "id":{"type":"string"},
+    "type":{"enum":["waterSource","pump","treatmentUnit","main","fieldConnection","submain","lateral","outlet","applicationDevice","plantDemandPoint","section","operatingGroup","valve","route","designOption","installedNetwork"]},
+    "version":{"type":"string"},
+    "status":{"enum":["observed","measured","described","inferred","confirmed","proposed","accepted","installed","superseded","retired"]},
+    "provenance":{"type":"object","required":["sourceType"],"properties":{"sourceType":{"enum":["owner","user","ai","sensor","map","photo","document","calculation","external"]},"sourceRef":{"type":"string"},"confidence":{"type":"number","minimum":0,"maximum":1}}},
+    "mothershipId":{"type":"string"},
+    "placeId":{"type":"string"},
+    "sectionId":{"type":"string"},
+    "upstreamId":{"type":"string"},
+    "downstreamIds":{"type":"array","items":{"type":"string"}},
+    "dependsOn":{"type":"array","items":{"type":"string"}},
+    "geometry":{"type":"object","properties":{"kind":{"enum":["point","line","polygon","roughArea"]},"coordinates":{"type":"array"},"editable":{"type":"boolean"},"measurementVisible":{"type":"boolean"}}},
+    "hydraulics":{"type":"object","properties":{"flowLph":{"type":"number"},"pressure":{"type":"number"},"headM":{"type":"number"},"lengthM":{"type":"number"},"diameterMm":{"type":"number"},"status":{"enum":["unknown","no-load","pass","fail","not-applicable"]}}},
+    "device":{"type":"object","properties":{"deviceType":{"enum":["dripper","bubbler","jet","mini-sprinkler","sprinkler","fogger","other"]},"dischargeLph":{"type":"number"},"operatingPressure":{"type":"number"},"wettedDiameterM":{"type":"number"},"spacingM":{"type":"number"},"countPerPlant":{"type":"number"}}},
+    "plantDemand":{"type":"object","properties":{"plantSpacingM":{"type":"number"},"rowSpacingM":{"type":"number"},"aggregatedDischargeLph":{"type":"number"},"deviceIds":{"type":"array","items":{"type":"string"}}}},
+    "humanAccess":{"type":"object","properties":{"accessRefs":{"type":"array","items":{"type":"string"}},"maintenanceFrequency":{"type":"string"},"constraints":{"type":"array","items":{"type":"string"}}}},
+    "power":{"type":"object","properties":{"phase":{"enum":["single","three","solar","generator","unknown"]},"hp":{"type":"number"},"availabilityHours":{"type":"number"}}},
+    "design":{"type":"object","properties":{"designVersion":{"type":"string"},"calculatedLayoutRef":{"type":"string"},"acceptedLayoutRef":{"type":"string"},"purchaseQuantityRef":{"type":"string"}}},
+    "eventRefs":{"type":"array","items":{"type":"string"}},
+    "shadowRefs":{"type":"array","items":{"type":"string"}},
+    "payload":{"type":"object","additionalProperties":true}
+  },
+  "additionalProperties":true
+}
