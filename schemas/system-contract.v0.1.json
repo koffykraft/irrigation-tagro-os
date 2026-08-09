@@ -1,0 +1,60 @@
+{
+  "schema_version": "0.1",
+  "system": "irrigation-tagro-os",
+  "governing_principles": [
+    "mothership",
+    "planar",
+    "flux",
+    "ripple",
+    "shadow",
+    "replaceability",
+    "provenance"
+  ],
+  "entity_states": [
+    "observed",
+    "measured",
+    "described",
+    "inferred",
+    "confirmed",
+    "proposed",
+    "accepted",
+    "installed",
+    "superseded"
+  ],
+  "replaceable_adapters": [
+    "map_provider",
+    "tile_provider",
+    "geocoder",
+    "elevation_provider",
+    "weather_provider",
+    "geometry_editor",
+    "theme",
+    "navigation_shell",
+    "database",
+    "storage",
+    "sync",
+    "authentication",
+    "ai_provider",
+    "hydraulic_engine",
+    "reporting_engine"
+  ],
+  "core_relationships": [
+    "belongs_to",
+    "located_in",
+    "connects_to",
+    "supplies",
+    "depends_on",
+    "derived_from",
+    "evidenced_by",
+    "supersedes",
+    "affects",
+    "constrains"
+  ],
+  "event_policy": {
+    "all_material_changes_create_event": true,
+    "events_may_create_ripple": true,
+    "events_do_not_always_create_shadow": true,
+    "shadow_family_deduplication_required": true
+  },
+  "design_rule": "Existing implementation is evidence, not authority. Domain contracts and doctrine govern replacement components."
+}
