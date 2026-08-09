@@ -1,0 +1,26 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://tagro.in/schemas/reflective-capture-v1.0.schema.json",
+  "title":"TAGRO Reflective Capture v1.0",
+  "type":"object",
+  "required":["taskRef","captureAtoms"],
+  "properties":{
+    "taskRef":{"type":"string"},
+    "depth":{"enum":["SUB_MINIMUM","MINIMUM","ADEQUATE","STRETCH","MAXIMUM"]},
+    "captureAtoms":{"type":"array","items":{"type":"object","required":["id","thing","evidence"],"properties":{
+      "id":{"type":"string"},
+      "thing":{"type":"object","required":["type","label"],"properties":{"type":{"type":"string"},"id":{"type":"string"},"label":{"type":"string"}}},
+      "relationships":{"type":"array","items":{"type":"object","properties":{"type":{"type":"string"},"targetId":{"type":"string"},"targetLabel":{"type":"string"},"status":{"enum":["described","inferred","confirmed"]}}}},
+      "purposes":{"type":"array","items":{"type":"object","required":["code"],"properties":{"code":{"type":"string"},"farmerWords":{"type":"string"},"importance":{"enum":["primary","supporting","incidental","unknown"]},"status":{"enum":["described","inferred","confirmed"]},"season":{"type":"string"}}}},
+      "evidence":{"type":"array","items":{"type":"object","required":["source","captureMethod","status"],"properties":{"source":{"type":"string"},"captureMethod":{"enum":["tap","choose","rank","yes-no","number","speech","text","photo","map","draw","measure","previous-state","external"]},"status":{"enum":["observed","described","measured","inferred","confirmed"]},"value":{},"farmerWords":{"type":"string"},"confidence":{"type":"number","minimum":0,"maximum":1},"at":{"type":"string"}}}},
+      "importance":{"enum":["primary","supporting","incidental","unknown"]},
+      "rippleTargets":{"type":"array","items":{"type":"string"}},
+      "notes":{"type":"string"}
+    }}},
+    "reflections":{"type":"array","items":{"type":"object","required":["id","text","status"],"properties":{"id":{"type":"string"},"text":{"type":"string"},"derivedFrom":{"type":"array","items":{"type":"string"}},"status":{"enum":["proposed","accepted","corrected","ignored"]},"correction":{"type":"string"}}}},
+    "unknowns":{"type":"array","items":{"type":"object","properties":{"factPath":{"type":"string"},"whyItMatters":{"type":"string"},"blocking":{"type":"boolean"}}}},
+    "stretchOffer":{"type":"object","properties":{"offered":{"type":"boolean"},"effort":{"type":"string"},"value":{"type":"string"},"accepted":{"type":"boolean"}}},
+    "events":{"type":"array","items":{"type":"string"}}
+  },
+  "additionalProperties":true
+}
