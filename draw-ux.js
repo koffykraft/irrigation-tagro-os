@@ -1,5 +1,5 @@
 (()=>{
-if(!window.map||!map.pm)return;
+if(typeof map==='undefined'||!map.pm)return;
 map.pm.setGlobalOptions({finishOnEnter:true,exitModeOnEscape:true,continueDrawing:true});
 const box=document.createElement('div');box.id='tagroDrawFinish';box.className='tagro-draw-finish';box.innerHTML='<span id="tagroDrawHint" class="tagro-draw-hint">Enter = finish · Esc = exit</span><button id="tagroFinishShape" class="ok">✓ Finish</button><button id="tagroExitDraw">Esc</button>';document.querySelector('.mapwrap').appendChild(box);
 let activeShape=null;
