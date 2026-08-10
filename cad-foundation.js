@@ -1,5 +1,5 @@
 (()=>{
-if(!window.map||!map.pm)return;
+if(typeof map==='undefined'||!map.pm)return;
 const q=s=>document.querySelector(s);
 const layerStates={all:{label:'All',visible:true,locked:false},field:{label:'Field',visible:true,locked:false},points:{label:'Points',visible:true,locked:false},pipes:{label:'Pipes',visible:true,locked:false},main:{label:'Main',visible:true,locked:false},submain:{label:'Submain',visible:true,locked:false},lateral:{label:'Laterals',visible:true,locked:false},text:{label:'Text',visible:true,locked:false},other:{label:'Other',visible:true,locked:false}};
 try{const saved=JSON.parse(localStorage.getItem('tagro.cad.layers.v1'));Object.keys(layerStates).forEach(k=>{if(saved&&saved[k])Object.assign(layerStates[k],saved[k])})}catch(e){}
