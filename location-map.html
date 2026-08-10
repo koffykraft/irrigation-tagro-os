@@ -9,12 +9,20 @@
   <style>
     *{box-sizing:border-box}
     html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#111}
+    button,input{font:inherit}
     .page{position:fixed;inset:0;display:grid;grid-template-rows:42px 1fr}
-    .titlebar{display:flex;align-items:center;gap:8px;padding:0 10px 0 12px;background:#fff;border-bottom:1px solid #d9ded9;color:#172019;z-index:1000}
+    .titlebar{display:flex;align-items:center;gap:7px;padding:0 8px;background:#fff;border-bottom:1px solid #d9ded9;color:#172019;z-index:1000;position:relative}
+    .toolmenu{position:relative;flex:0 0 auto}
+    .tooltoggle{height:30px;width:30px;border:1px solid rgba(20,30,22,.18);border-radius:8px;background:#fff;color:#172019;padding:0;display:grid;place-items:center;font-size:15px;cursor:pointer}
+    .tooltoggle span{font-size:9px;margin-left:1px}
+    .toolpanel{position:absolute;top:35px;left:0;width:116px;padding:5px;background:#fff;border:1px solid rgba(20,30,22,.18);border-radius:9px;box-shadow:0 7px 20px rgba(0,0,0,.18);display:none;z-index:1200}
+    .toolpanel.open{display:block}
+    .toolitem{width:100%;height:34px;border:0;border-radius:7px;background:#fff;color:#172019;text-align:left;padding:0 8px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px}
+    .toolitem .pen{font-size:16px}
     .titletext{font-size:13px;font-weight:800;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     .headercontrols{margin-left:auto;display:flex;align-items:center;gap:6px;flex:0 0 auto}
     .searchbox{display:flex;align-items:center;height:30px;width:160px;background:#fff;border:1px solid rgba(20,30,22,.18);border-radius:9px;overflow:hidden;min-width:0}
-    .searchbox input{border:0;outline:0;background:transparent;padding:0 8px;width:100%;height:100%;font:inherit;font-size:12px;color:#172019;min-width:0}
+    .searchbox input{border:0;outline:0;background:transparent;padding:0 8px;width:100%;height:100%;font-size:12px;color:#172019;min-width:0}
     .searchbox button{border:0;background:transparent;height:100%;width:30px;font-size:15px;cursor:pointer;color:#172019;flex:0 0 30px}
     .locate{height:30px;width:30px;border-radius:9px;background:#fff;border:1px solid rgba(20,30,22,.18);font-size:15px;font-weight:800;color:#172019;cursor:pointer;flex:0 0 30px}
     .mapwrap{position:relative;min-height:0}
@@ -22,18 +30,25 @@
     .leaflet-control-zoom{display:none}
     .leaflet-control-attribution{font-size:8px!important;background:rgba(255,255,255,.78)!important}
     @media(max-width:520px){
-      .titlebar{padding-left:9px;padding-right:7px;gap:6px}
-      .titletext{font-size:11px}
-      .searchbox{width:145px;height:28px}
+      .titlebar{gap:5px;padding-left:6px;padding-right:6px}
+      .tooltoggle{width:28px;height:28px}
+      .titletext{font-size:10.5px}
+      .searchbox{width:138px;height:28px}
       .locate{width:28px;height:28px;flex-basis:28px}
       .searchbox button{width:28px;flex-basis:28px}
-      .searchbox input{font-size:11px;padding:0 7px}
+      .searchbox input{font-size:11px;padding:0 6px}
     }
   </style>
 </head>
 <body>
 <div class="page">
   <header class="titlebar">
+    <div class="toolmenu">
+      <button id="toolToggle" class="tooltoggle" aria-label="Open tools" aria-expanded="false">✎<span>▾</span></button>
+      <div id="toolPanel" class="toolpanel">
+        <button class="toolitem" type="button"><span class="pen">✎</span><span>Drawing</span></button>
+      </div>
+    </div>
     <div class="titletext">THUMPASSERY AGRO&nbsp; - &nbsp;Location Map</div>
     <div class="headercontrols">
       <div class="searchbox">
@@ -53,6 +68,20 @@
     maxZoom:23,
     attribution:'Esri, Maxar, Earthstar Geographics, and the GIS User Community'
   }).addTo(map);
+
+  const toolToggle=document.getElementById('toolToggle');
+  const toolPanel=document.getElementById('toolPanel');
+  toolToggle.addEventListener('click',e=>{
+    e.stopPropagation();
+    const open=toolPanel.classList.toggle('open');
+    toolToggle.setAttribute('aria-expanded',String(open));
+  });
+  document.addEventListener('click',()=>{
+    toolPanel.classList.remove('open');
+    toolToggle.setAttribute('aria-expanded','false');
+  });
+  toolPanel.addEventListener('click',e=>e.stopPropagation());
+
   let locationMarker=null;
   async function searchPlace(){
     const q=document.getElementById('placeSearch').value.trim();
