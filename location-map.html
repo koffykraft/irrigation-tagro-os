@@ -7,9 +7,9 @@
 <title>THUMPASSERY AGRO - Location Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css">
-<link rel="stylesheet" href="identify.css">
-<link rel="stylesheet" href="draw-ux.css">
-<link rel="stylesheet" href="cad-foundation.css">
+<link rel="stylesheet" href="identify.css?v=13">
+<link rel="stylesheet" href="draw-ux.css?v=13">
+<link rel="stylesheet" href="cad-foundation.css?v=13">
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#111;color:#111}button,input{font:inherit}.page{position:fixed;inset:0;display:grid;grid-template-rows:42px 1fr}.titlebar{display:flex;align-items:center;gap:6px;padding:0 6px;background:#fff;border-bottom:1px solid #d9ded9;z-index:1000}.drawbtn{height:28px;width:34px;border:1px solid #cfd4cf;border-radius:7px;background:#fff;font-size:15px}.drawbtn.on{background:#eef6ff;border-color:#3182ce}.title{font-size:10.5px;font-weight:800;white-space:nowrap}.controls{margin-left:auto;display:flex;gap:5px}.search{display:flex;width:128px;height:28px;border:1px solid #cfd4cf;border-radius:8px;overflow:hidden;background:#fff}.search input{width:100%;border:0;outline:0;padding:0 6px;font-size:11px;min-width:0}.search button,.locate{width:28px;border:0;background:#fff}.locate{height:28px;border:1px solid #cfd4cf;border-radius:8px}.mapwrap{position:relative;min-height:0}#map{position:absolute;inset:0;background:#d7d7d7}.leaflet-control-zoom{display:none}.leaflet-control-attribution{font-size:8px!important;background:rgba(255,255,255,.8)!important}.appearance{position:absolute;left:8px;bottom:18px;z-index:900;display:none;gap:7px;align-items:center;background:rgba(255,255,255,.96);border:1px solid #cfd4cf;border-radius:10px;padding:6px 8px;box-shadow:0 3px 12px rgba(0,0,0,.16)}.appearance.show{display:flex}.sw{width:25px;height:25px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #999}.sw.on{box-shadow:0 0 0 3px #111}.appearance input[type=range]{width:86px}.appearance .num{font-size:11px;font-weight:700;min-width:18px}.leaflet-pm-toolbar .button-container a{width:38px!important;height:38px!important}.leaflet-pm-toolbar .control-icon{background-size:24px 24px!important}.leaflet-pm-toolbar{margin-top:8px!important;margin-left:8px!important}.leaflet-marker-icon.leaflet-pm-marker{width:20px!important;height:20px!important;margin-left:-10px!important;margin-top:-10px!important}.leaflet-pm-icon-marker{width:18px!important;height:18px!important}@media(max-width:390px){.title{font-size:9.2px}.search{width:108px}.appearance{max-width:calc(100vw - 16px);overflow-x:auto}}
 </style>
@@ -30,14 +30,14 @@ function applyStyle(layer){if(layer&&layer.setStyle){layer.setStyle({color:strok
 map.on('pm:create',e=>{e.layer.options.tagroShape=e.shape;selected=e.layer;applyStyle(e.layer);e.layer.on('click',()=>{selected=e.layer})});
 map.on('pm:edit',e=>{if(e.layer)selected=e.layer});
 map.on('pm:dragstart',e=>{if(e.layer)selected=e.layer});
-document.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{stroke=b.dataset.color;document.querySelectorAll('[data-color]').forEach(x=>x.classList.toggle('on',x===b));if(selected&&selected.setStyle){selected.setStyle({color:stroke,fillColor:stroke});selected.options.tagroStyle={...(selected.options.tagroStyle||{}),color:stroke}}});
-$('#weight').oninput=e=>{weight=+e.target.value;$('#weightNum').textContent=weight;if(selected&&selected.setStyle){selected.setStyle({weight});selected.options.tagroStyle={...(selected.options.tagroStyle||{}),weight}}};
+document.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{stroke=b.dataset.color;document.querySelectorAll('[data-color]').forEach(x=>x.classList.toggle('on',x===b));if(selected&&!window.TAGRO_CAD?.isLocked?.(selected)&&selected.setStyle){selected.setStyle({color:stroke,fillColor:stroke});selected.options.tagroStyle={...(selected.options.tagroStyle||{}),color:stroke}}});
+$('#weight').oninput=e=>{weight=+e.target.value;$('#weightNum').textContent=weight;if(selected&&!window.TAGRO_CAD?.isLocked?.(selected)&&selected.setStyle){selected.setStyle({weight});selected.options.tagroStyle={...(selected.options.tagroStyle||{}),weight}}};
 async function searchPlace(){const v=$('#q').value.trim();if(!v)return;const c=v.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);if(c){map.setView([+c[1],+c[2]],19);return}try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(v));const d=await r.json();if(d[0])map.setView([+d[0].lat,+d[0].lon],19)}catch(e){}}
 $('#go').onclick=searchPlace;$('#q').onkeydown=e=>{if(e.key==='Enter')searchPlace()};
 $('#locate').onclick=()=>navigator.geolocation&&navigator.geolocation.getCurrentPosition(p=>{const ll=[p.coords.latitude,p.coords.longitude];map.setView(ll,19);if(locationMarker)locationMarker.setLatLng(ll);else locationMarker=L.circleMarker(ll,{radius:6,weight:2,color:'#fff',fillColor:'#1677ff',fillOpacity:1,interactive:false,pmIgnore:true}).addTo(map)},()=>{},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
 </script>
-<script src="draw-ux.js"></script>
-<script src="cad-foundation.js"></script>
-<script src="identify.js"></script>
+<script src="draw-ux.js?v=13"></script>
+<script src="cad-foundation.js?v=13"></script>
+<script src="identify.js?v=13"></script>
 </body>
 </html>
