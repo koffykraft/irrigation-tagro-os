@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css">
 <link rel="stylesheet" href="identify.css?v=14">
-<link rel="stylesheet" href="draw-ux.css?v=14">
+<link rel="stylesheet" href="draw-ux.css?v=15">
 <link rel="stylesheet" href="cad-foundation.css?v=14">
 <link rel="stylesheet" href="cad-measure.css?v=14">
 <style>
@@ -37,7 +37,7 @@ async function searchPlace(){const v=$('#q').value.trim();if(!v)return;const c=v
 $('#go').onclick=searchPlace;$('#q').onkeydown=e=>{if(e.key==='Enter')searchPlace()};
 $('#locate').onclick=()=>navigator.geolocation&&navigator.geolocation.getCurrentPosition(p=>{const ll=[p.coords.latitude,p.coords.longitude];map.setView(ll,19);if(locationMarker)locationMarker.setLatLng(ll);else locationMarker=L.circleMarker(ll,{radius:6,weight:2,color:'#fff',fillColor:'#1677ff',fillOpacity:1,interactive:false,pmIgnore:true}).addTo(map)},()=>{},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
 </script>
-<script src="draw-ux.js?v=14"></script>
+<script src="draw-ux.js?v=15"></script>
 <script src="cad-foundation.js?v=14"></script>
 <script src="cad-measure.js?v=14"></script>
 <script src="identify.js?v=14"></script>
