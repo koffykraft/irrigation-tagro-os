@@ -1,0 +1,16 @@
+(()=>{
+if(typeof map==='undefined'||!map.pm)return;
+const KEY='tagro.v16.trial.workspace.v1';let restoring=false,timer=null;
+const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch{return null}};
+function flatten(v){if(!Array.isArray(v))return v;if(v.length&&v[0]&&typeof v[0].lat==='number')return v.map(x=>[x.lat,x.lng]);return v.map(flatten)}
+function shape(l){try{return l.options?.tagroShape||l.pm?.getShape?.()||''}catch{return''}}
+function rec(l){if(!l||l.options?.pmIgnore)return null;const s=shape(l),base={shape:s,identity:l.options.tagroIdentityId||null,style:{color:l.options.color,weight:l.options.weight,fillColor:l.options.fillColor,fillOpacity:l.options.fillOpacity},elevation:clone(l.options.tagroElevation||null),engineering:clone(l.options.tagroEngineering||null),emitter:clone(l.options.tagroEmitter||null),note:l.options.tagroNote||''};if(l instanceof L.Circle)return{...base,type:'circle',latlng:[l.getLatLng().lat,l.getLatLng().lng],radius:l.getRadius()};if(l instanceof L.CircleMarker)return{...base,type:'circlemarker',latlng:[l.getLatLng().lat,l.getLatLng().lng],radius:l.getRadius()};if(l instanceof L.Marker)return{...base,type:'marker',latlng:[l.getLatLng().lat,l.getLatLng().lng]};if(l.getLatLngs)return{...base,type:(s==='Polygon'||s==='Rectangle')?'polygon':'line',latlngs:flatten(l.getLatLngs())};return null}
+function snapshot(){return{view:{center:[map.getCenter().lat,map.getCenter().lng],zoom:map.getZoom()},layers:(window.TAGRO_CAD?.getLayers?.()||map.pm.getGeomanDrawLayers()).map(rec).filter(Boolean),savedAt:new Date().toISOString()}}
+function save(){if(restoring)return;try{localStorage.setItem(KEY,JSON.stringify(snapshot()))}catch{}}
+function schedule(){if(restoring)return;clearTimeout(timer);timer=setTimeout(save,450)}
+function nested(v){return Array.isArray(v)&&v.length===2&&typeof v[0]==='number'?L.latLng(v[0],v[1]):v.map(nested)}
+function add(r){let l;if(r.type==='circle')l=L.circle(r.latlng,{radius:r.radius,...r.style});else if(r.type==='circlemarker')l=L.circleMarker(r.latlng,{radius:r.radius,...r.style});else if(r.type==='marker')l=L.marker(r.latlng);else if(r.type==='polygon')l=L.polygon(nested(r.latlngs),r.style||{});else l=L.polyline(nested(r.latlngs),r.style||{});l.options.tagroShape=r.shape;l.options.tagroIdentityId=r.identity;l.options.tagroElevation=r.elevation||undefined;l.options.tagroEngineering=r.engineering||undefined;l.options.tagroEmitter=r.emitter||undefined;l.options.tagroNote=r.note||'';l.addTo(map);map.fire('pm:create',{layer:l,shape:r.shape});return l}
+function restore(){let d=null;try{d=JSON.parse(localStorage.getItem(KEY)||'null')}catch{}if(!d?.layers?.length)return;restoring=true;try{d.layers.forEach(add);if(d.view?.center)map.setView(d.view.center,d.view.zoom||17)}finally{restoring=false}}
+['pm:create','pm:edit','pm:dragend','pm:remove'].forEach(e=>map.on(e,schedule));window.addEventListener('tagro:identitychange',schedule);window.addEventListener('tagro:cadchange',schedule);window.addEventListener('beforeunload',save);setTimeout(restore,120);
+window.TAGRO_V16_PERSISTENCE={save,snapshot,clear:()=>localStorage.removeItem(KEY)};
+})();
