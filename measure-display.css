@@ -1,0 +1,4 @@
+.tagro-measure-display-icon{width:0!important;height:0!important;overflow:visible!important}
+.tagro-measure-display{transform:translate(-50%,-50%);white-space:nowrap;text-align:center;background:rgba(255,255,255,.94);border:1px solid rgba(34,44,37,.45);border-radius:6px;padding:3px 6px;font:800 10px system-ui;color:#152019;box-shadow:0 1px 5px rgba(0,0,0,.22);pointer-events:none}
+.tagro-measure-display b,.tagro-measure-display span{display:block}
+.tagro-measure-display span{margin-top:1px;font-size:8px;font-weight:650;color:#59635c}
