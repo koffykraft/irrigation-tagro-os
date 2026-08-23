@@ -16,23 +16,27 @@ function boot(){
     const budget=Math.max(isMobile?120:150,Math.min(isMobile?vh*.26:vh*.34,isMobile?230:330));
     return Math.max(3,Math.min(isMobile?6:10,Math.floor(budget/Math.max(30,avg))));
   }
+  function ensurePager(table,body){
+    let pager=body.querySelector('.tagro-bom-pager'),note=body.querySelector('.tagro-bom-page-size');
+    if(!pager){pager=document.createElement('div');pager.className='tagro-bom-pager';pager.innerHTML='<button class="tagro-bom-page-btn" data-bom-prev>‹ Prev</button><span class="tagro-bom-page-info"></span><button class="tagro-bom-page-btn" data-bom-next>Next ›</button>';table.insertAdjacentElement('afterend',pager)}
+    if(!note){note=document.createElement('div');note.className='tagro-bom-page-size';pager.insertAdjacentElement('afterend',note)}
+    return{pager,note};
+  }
   function paginate(){
     isolate();if(!panel.classList.contains('show'))return;
     const table=panel.querySelector('.tagro-bom-table'),body=panel.querySelector('#tagroBomBody');if(!table||!body)return;
     const rows=[...table.querySelectorAll('tbody tr')];if(!rows.length)return;
-    body.querySelector('.tagro-bom-pager')?.remove();body.querySelector('.tagro-bom-page-size')?.remove();
-    const size=pageCapacity(rows),pages=Math.max(1,Math.ceil(rows.length/size));page=Math.max(0,Math.min(page,pages-1));
-    const sig=`${rows.length}:${size}`;if(sig!==lastSignature){page=0;lastSignature=sig}
+    const size=pageCapacity(rows),pages=Math.max(1,Math.ceil(rows.length/size)),sig=`${rows.length}:${size}`;if(sig!==lastSignature){page=0;lastSignature=sig}page=Math.max(0,Math.min(page,pages-1));
     rows.forEach((r,i)=>{r.style.display=i>=page*size&&i<(page+1)*size?'':'none'});
-    if(pages>1){
-      const pager=document.createElement('div');pager.className='tagro-bom-pager';pager.innerHTML=`<button class="tagro-bom-page-btn" data-bom-prev ${page===0?'disabled':''}>‹ Prev</button><span class="tagro-bom-page-info">Page ${page+1} of ${pages}</span><button class="tagro-bom-page-btn" data-bom-next ${page>=pages-1?'disabled':''}>Next ›</button>`;
-      const note=document.createElement('div');note.className='tagro-bom-page-size';note.textContent=`${size} rows per page · sized to this viewport`;
-      table.insertAdjacentElement('afterend',pager);pager.insertAdjacentElement('afterend',note);
-      pager.querySelector('[data-bom-prev]').onclick=()=>{page--;paginate();panel.scrollTop=Math.max(0,table.offsetTop-48)};
-      pager.querySelector('[data-bom-next]').onclick=()=>{page++;paginate();panel.scrollTop=Math.max(0,table.offsetTop-48)};
-    }
+    const existingPager=body.querySelector('.tagro-bom-pager'),existingNote=body.querySelector('.tagro-bom-page-size');
+    if(pages<=1){existingPager?.remove();existingNote?.remove();return}
+    const {pager,note}=ensurePager(table,body),prev=pager.querySelector('[data-bom-prev]'),next=pager.querySelector('[data-bom-next]'),info=pager.querySelector('.tagro-bom-page-info');
+    prev.disabled=page===0;next.disabled=page>=pages-1;info.textContent=`Page ${page+1} of ${pages}`;note.textContent=`${size} rows per page · sized to this viewport`;
+    prev.onclick=()=>{page--;paginate();panel.scrollTop=Math.max(0,table.offsetTop-48)};
+    next.onclick=()=>{page++;paginate();panel.scrollTop=Math.max(0,table.offsetTop-48)};
   }
-  const observer=new MutationObserver(()=>requestAnimationFrame(paginate));observer.observe(panel,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
+  let scheduled=false;function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;paginate()})}
+  const observer=new MutationObserver(schedule);observer.observe(panel,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
   let resizeTimer=null;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{lastSignature='';paginate()},120)});
   window.addEventListener('orientationchange',()=>setTimeout(()=>{lastSignature='';paginate()},180));
   window.addEventListener('tagro:cadchange',()=>setTimeout(paginate,20));window.addEventListener('tagro:identitychange',()=>setTimeout(paginate,20));
