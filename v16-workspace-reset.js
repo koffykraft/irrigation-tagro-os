@@ -12,10 +12,10 @@ function boot(){
   }
   function inject(){
     if(!pane.classList.contains('on')||pane.querySelector('.tagro-workspace-tools'))return;
-    const box=document.createElement('div');box.className='tagro-workspace-tools';box.innerHTML='<div class="tagro-workspace-help"><b>Delete drawings</b><br>For one object: select it, open <b>Object</b>, then <b>Delete</b>. Or use the drawing toolbar eraser to tap objects.</div><button type="button" class="tagro-cad-btn danger" data-tagro-reset>Reset workspace</button><div class="tagro-workspace-help">Reset is the clean start. Ordinary browser Refresh keeps the saved workspace.</div>';
-    pane.appendChild(box);box.querySelector('[data-tagro-reset]').onclick=reset;
+    const box=document.createElement('div');box.className='tagro-workspace-tools';box.innerHTML='<div class="tagro-workspace-row"><div><b>Workspace</b><span>Clean start for this field session</span></div><button type="button" class="tagro-cad-btn danger" data-tagro-reset>Reset workspace</button></div><div class="tagro-workspace-help"><b>Delete one drawing:</b> select it → <b>Object</b> → <b>Delete</b>, or use the drawing-toolbar eraser. Browser Refresh keeps the saved workspace.</div>';
+    pane.insertBefore(box,pane.firstChild);box.querySelector('[data-tagro-reset]').onclick=reset;
   }
-  const style=document.createElement('style');style.textContent='.tagro-workspace-tools{margin-top:9px;padding-top:8px;border-top:1px solid #e6e9e6;display:grid;gap:7px}.tagro-workspace-tools .tagro-cad-btn{width:100%;min-height:32px}.tagro-workspace-help{font-size:9.5px;line-height:1.4;color:#626a63}';document.head.appendChild(style);
+  const style=document.createElement('style');style.textContent='.tagro-workspace-tools{margin:0 0 8px;padding:7px;border:1px solid #e0e4e0;border-radius:8px;background:#fafbfa;display:grid;gap:6px}.tagro-workspace-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center}.tagro-workspace-row b{display:block;font-size:10px}.tagro-workspace-row span{display:block;margin-top:1px;font-size:8.5px;color:#747b75}.tagro-workspace-tools .tagro-cad-btn{min-height:30px;white-space:nowrap}.tagro-workspace-help{font-size:9px;line-height:1.35;color:#626a63}@media(max-width:699px){.tagro-workspace-row{grid-template-columns:1fr}.tagro-workspace-tools .tagro-cad-btn{width:100%;min-height:34px}}';document.head.appendChild(style);
   const mo=new MutationObserver(()=>setTimeout(inject,0));mo.observe(pane,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   window.addEventListener('tagro:cadchange',()=>setTimeout(inject,0));
   window.TAGRO_WORKSPACE={reset,clearKeys,sessionKeys:[...SESSION_KEYS]};setTimeout(inject,150);
