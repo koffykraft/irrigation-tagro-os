@@ -24,6 +24,7 @@ function boot(){
     const box=pane.querySelector('.v16-design'),l=selected();if(!box||!l)return;markLegacy(l);
     let row=box.querySelector('.v16-provenance');if(!row){row=document.createElement('div');row.className='v16-provenance';box.appendChild(row)}
     const g=l.options.tagroEngineering,e=l.options.tagroEmitter,pipeOk=g?.confirmed===true,emitNeeded=String(l.options.tagroIdentityId||'')==='lateral',emitOk=!emitNeeded||e?.confirmed===true;
+    const sig=`${pipeOk?'1':'0'}:${emitNeeded?'1':'0'}:${emitOk?'1':'0'}`;if(row.dataset.sig===sig)return;row.dataset.sig=sig;
     row.innerHTML=`<div class="${pipeOk&&emitOk?'v16-design-ok':'v16-design-warn'}">${pipeOk?'Pipe specification accepted':'Pipe specification is a software default'}${emitNeeded?` · ${emitOk?'Emitter inputs accepted':'Emitter inputs are software defaults'}`:''}</div>${pipeOk&&emitOk?'':`<button type="button" class="tagro-cad-btn" data-v16-accept>Accept shown inputs</button>`}`;
     const b=row.querySelector('[data-v16-accept]');if(b)b.onclick=()=>confirm('all');
   }
