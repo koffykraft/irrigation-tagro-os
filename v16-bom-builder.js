@@ -17,7 +17,7 @@ function boot(){
   function emitterOf(l){const x=l.options?.tagroEmitter;if(x&&Number(x.dischargeLph)>0&&Number(x.spacingM)>0)return{...defaultEmitter,...x,provisional:false};return{...defaultEmitter,provisional:true}}
   function emitterCount(length,cfg){return Math.max(1,Math.floor(Math.max(0,length)/Math.max(.1,+cfg.spacingM))+1)}
   function build(){
-    const layers=validLayers(),pipes=layers.filter(l=>pipeRoles.has(role(l))),unidentifiedLines=layers.filter(l=>{const r=role(l);let s='';try{s=l.options?.tagroShape||l.pm?.getShape?.()||''}catch{}return s==='Line'&&!pipeRoles.has(r)&&r!=='road'});
+    const layers=validLayers(),pipes=layers.filter(l=>pipeRoles.has(role(l))),unidentifiedLines=layers.filter(l=>{const r=role(l);let s='';try{s=l.options?.tagroShape||l.pm?.getShape?.()||''}catch{}return s==='Line'&&(!r||r==='unidentified')});
     let network=null;try{network=window.TAGRO_NETWORK.buildRelationships()}catch{}
     const rows=new Map(),sources=[];let pipeM=0,emitters=0,provisional=0;
     function addRow(row,qty,source){
