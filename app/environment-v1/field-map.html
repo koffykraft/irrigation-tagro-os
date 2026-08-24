@@ -42,6 +42,16 @@
       </div>
     </aside>
 
+    <aside id="proposalPanel" class="proposal-panel" aria-live="polite">
+      <span class="proposal-kicker">PROPOSED · NOT YET DESIGN</span>
+      <b id="proposalTitle">Geometry proposal</b>
+      <p id="proposalNote"></p>
+      <div class="proposal-actions">
+        <button id="acceptProposal" class="primary" type="button">Use this geometry</button>
+        <button id="clearProposal" type="button">Clear preview</button>
+      </div>
+    </aside>
+
     <div id="status" class="status">Blank field · nothing assumed</div>
 
     <aside id="selection" class="selection" aria-live="polite">
@@ -63,6 +73,7 @@
 <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.js"></script>
 <script src="./environment-learning.js"></script>
 <script src="./spatial-store.js"></script>
+<script src="./spatial-proposal.js"></script>
 <script src="./field-map.js"></script>
 </body>
 </html>
