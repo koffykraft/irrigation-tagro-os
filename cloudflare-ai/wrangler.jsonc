@@ -5,7 +5,7 @@
   "compatibility_date": "2026-08-24",
   "vars": {
     "ENVIRONMENT": "staging",
-    "BUILD": "co-design-environment-v1-anthropic-20260824c",
+    "BUILD": "co-design-environment-v1-anthropic-20260824d",
     "AI_MODEL": "anthropic/claude-sonnet-4.6",
     "AI_GATEWAY": "default"
   },
