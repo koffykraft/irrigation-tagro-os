@@ -1,0 +1,1 @@
+WORKING shell only. FIELD and DRAWING share object state in-browser. Anthropic and deterministic engineering are configured behind staging Worker routes. Runtime deployment, real map measurement, persistence, proposal-to-geometry execution and end-to-end mobile interaction remain unverified/not yet complete.
