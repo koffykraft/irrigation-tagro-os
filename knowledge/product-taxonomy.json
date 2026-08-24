@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "status": "seed_from_verified_manifests",
+  "manufacturer": "Jain Irrigation",
+  "families": {
+    "drip_emitters": [
+      "J SC PC Plus", "Turbo Key Plus", "Turbo PC", "Click Tif HD", "J Loc Emitter", "Labyrinth Stake Elbow", "AquaSpraySticks", "Mini Inline Emitter", "JainTurboTubeStake"
+    ],
+    "tubes": [
+      "JainPolySlim", "Jain Tough Hose", "Extension Tube", "Jain Oval Hose", "Vinyl Tube", "Jain Drip Spray Hose", "Multilayer PE Extension Tube"
+    ],
+    "micro_sprinklers": [
+      "J Mini Sprinkler", "Modular Sprinkler", "2002 AquaSmart", "2005 Aqua Master", "Green Spin", "Flipper", "501-U THLVS", "502-H THMVS"
+    ],
+    "mini_sprinklers": [
+      "5022 SD-U", "5022-4", "5022 SD PC", "5022 SD", "6025 SD", "427 AGU", "427 B AG", "Super 10", "Magic Drive", "Mamkad 16"
+    ],
+    "under_tree": [
+      "5024-4", "5024 SD U", "5024 SD", "6024 SD", "Opal", "Super 10 LA", "501 LA"
+    ],
+    "jets": [
+      "Jain Jet", "J Jets", "Hurricane", "Mini Spray Jet", "Smart Jet", "Turbo Jet", "Dan Jet PC"
+    ],
+    "misters": ["Green Mist", "Acu Mister"],
+    "foggers": ["Turbo Fog", "Super Fogger", "Jain Fogger", "Fogger", "Stabilizing Weight", "Super LPD", "LPD"],
+    "filters": [
+      "Smart Clean VEO", "SmartClean HHO", "SmartClean VHO", "Jain Super Flow Combo Filter", "Jain Super Flow TL/T Screen Filter", "Jain Super Flow L Filter", "Smartclean SA", "Super Clean Y", "Super Clean L", "Turbo Clean ML Y", "Disclean", "Jain Ghoomar", "Jain Sand Separator", "Jain Hydrocyclone Filter", "Clean Master"
+    ]
+  },
+  "knowledge_requirements_per_product": [
+    "official_name", "manufacturer_code", "category", "image_refs", "source_pdf", "source_page", "flow_or_nozzle_options", "pressure_range", "pressure_flow_relationship", "wetting_pattern_or_diameter", "filtration_requirement", "connection", "compatible_pipe", "recommended_uses", "limitations", "cost_position", "price_edition", "availability", "generic_equivalent_characteristics", "provenance"
+  ],
+  "rule": "Product names above are catalogue-discovery seeds only. Technical claims must be populated from their manufacturer PDFs before the AI may present them as verified characteristics."
+}
