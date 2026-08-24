@@ -1,0 +1,46 @@
+{
+  "knowledge_version": "jain-product-1.0.0",
+  "manufacturer": "Jain Irrigation Systems Ltd.",
+  "name": "Jain Ghoomar",
+  "category": "sand_separator",
+  "evidence_state": "manufacturer_document",
+  "source": {
+    "path": "/jain-irrigation-agent/Product Files_JAIN/jain_drip/Filters/Jain Ghoomar.pdf",
+    "dropbox_server_modified": "2026-08-02T05:45:31Z",
+    "document_scope": "product technical literature"
+  },
+  "function": {
+    "primary": "centrifugal separation of sand, grit and larger solid particles before downstream filtration",
+    "manufacturer_claim": "97%+ removal for particles 400 micron and larger under stated conditions",
+    "not_a_substitute_for": ["screen_filter","disc_filter","media_filter_when_finer_filtration_is_required"]
+  },
+  "hydraulic": {
+    "maximum_operating_pressure_kg_cm2": 8,
+    "models": [
+      {"connection_inch":2,"flow_range_m3_h":{"min":12,"max":30},"nominal_flow_m3_h":25,"drain_inch":1,"collection_chamber_litre":10},
+      {"connection_inch":2.5,"flow_range_m3_h":{"min":20,"max":40},"nominal_flow_m3_h":40,"drain_inch":1,"collection_chamber_litre":10},
+      {"connection_inch":3,"flow_range_m3_h":{"min":40,"max":60},"nominal_flow_m3_h":50,"drain_inch":1,"collection_chamber_litre":10}
+    ],
+    "clean_pressure_drop_kg_cm2": {
+      "2_in":{"10":0.06,"15":0.10,"20":0.17,"25":0.28,"30":0.35},
+      "2_5_in":{"20":0.12,"25":0.18,"30":0.22,"40":0.39},
+      "3_in":{"40":0.30,"50":0.49,"60":0.63}
+    }
+  },
+  "construction_and_service": {
+    "material": "engineering plastic",
+    "bottom_flush": true,
+    "manufacturer_claims": ["corrosion resistance","easy flushing","no routine internal element cleaning/change","reduces load on downstream filters"]
+  },
+  "design_adviser_hooks": {
+    "consider_when": ["water source carries sand or grit","well/bore source has mineral solids","protecting downstream disc/screen/media filters"],
+    "do_not_assume": [
+      "that every borewell requires a sand separator",
+      "that Ghoomar alone provides emitter-grade filtration",
+      "that nominal flow should be chosen without checking system flow and pressure loss"
+    ],
+    "ask_or_compare": ["water source type","observed sand/grit","operating flow","acceptable pressure loss","downstream filtration requirement"]
+  },
+  "generic_comparison_tags": ["hydrocyclone","sand_separator","pre_filtration","well_water"],
+  "image": {"status":"pending_asset_extraction","source_document_available":true}
+}
