@@ -29,7 +29,7 @@
   let editMode = false;
   let draft = [];
   let bounds = null;
-  let dragging = null;
+  let drag = null;
 
   function svgEl(tag, attrs = {}) {
     const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -52,12 +52,12 @@
     objects.forEach(object => allCoordinatePairs(object.geometry?.coordinates, pairs));
     if (!pairs.length) return null;
 
-    let minLng = Math.min(...pairs.map(p => p[0]));
-    let maxLng = Math.max(...pairs.map(p => p[0]));
-    let minLat = Math.min(...pairs.map(p => p[1]));
-    let maxLat = Math.max(...pairs.map(p => p[1]));
-
+    let minLng = Math.min(...pairs.map(pair => pair[0]));
+    let maxLng = Math.max(...pairs.map(pair => pair[0]));
+    let minLat = Math.min(...pairs.map(pair => pair[1]));
+    let maxLat = Math.max(...pairs.map(pair => pair[1]));
     const minimumSpan = 0.0006;
+
     if (maxLng - minLng < minimumSpan) {
       const mid = (minLng + maxLng) / 2;
       minLng = mid - minimumSpan / 2;
@@ -82,57 +82,62 @@
   function toXY(pair) {
     if (!bounds) return { x: WIDTH / 2, y: HEIGHT / 2 };
     const [lng, lat] = pair;
-    const x = PAD + ((lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * (WIDTH - PAD * 2);
-    const y = PAD + ((bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat)) * (HEIGHT - PAD * 2);
-    return { x, y };
+    return {
+      x: PAD + ((lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * (WIDTH - PAD * 2),
+      y: PAD + ((bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat)) * (HEIGHT - PAD * 2)
+    };
   }
 
   function toLngLat(point) {
     if (!bounds) return null;
     const xRatio = (point.x - PAD) / (WIDTH - PAD * 2);
     const yRatio = (point.y - PAD) / (HEIGHT - PAD * 2);
-    const lng = bounds.minLng + xRatio * (bounds.maxLng - bounds.minLng);
-    const lat = bounds.maxLat - yRatio * (bounds.maxLat - bounds.minLat);
-    return [lng, lat];
+    return [
+      bounds.minLng + xRatio * (bounds.maxLng - bounds.minLng),
+      bounds.maxLat - yRatio * (bounds.maxLat - bounds.minLat)
+    ];
+  }
+
+  function pointerPoint(event) {
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    const matrix = svg.getScreenCTM();
+    if (!matrix) return { x: WIDTH / 2, y: HEIGHT / 2 };
+    const local = point.matrixTransform(matrix.inverse());
+    return {
+      x: Math.max(PAD, Math.min(WIDTH - PAD, local.x)),
+      y: Math.max(PAD, Math.min(HEIGHT - PAD, local.y))
+    };
   }
 
   function objectCoordinates(object) {
     const geometry = object.geometry || {};
-    if (geometry.type === "Point") return [geometry.coordinates];
-    if (geometry.type === "LineString") return geometry.coordinates || [];
+    if (geometry.type === "Point") return [[...geometry.coordinates]];
+    if (geometry.type === "LineString") return (geometry.coordinates || []).map(pair => [...pair]);
     if (geometry.type === "Polygon") {
-      const ring = geometry.coordinates?.[0] || [];
+      const ring = (geometry.coordinates?.[0] || []).map(pair => [...pair]);
       if (ring.length > 1) {
         const first = ring[0];
         const last = ring[ring.length - 1];
-        if (first?.[0] === last?.[0] && first?.[1] === last?.[1]) return ring.slice(0, -1);
+        if (first[0] === last[0] && first[1] === last[1]) ring.pop();
       }
       return ring;
     }
     return [];
   }
 
-  function geometryFromPoints(kind, pairs) {
-    if (pointKinds.has(kind)) return { type: "Point", coordinates: pairs[0] };
+  function geometryFromPairs(kind, pairs) {
+    const copied = pairs.map(pair => [...pair]);
+    if (pointKinds.has(kind)) return { type: "Point", coordinates: copied[0] };
     if (kind === "boundary") {
-      const ring = [...pairs];
-      if (ring.length && (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1])) ring.push([...ring[0]]);
+      const ring = copied;
+      if (ring.length && (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1])) {
+        ring.push([...ring[0]]);
+      }
       return { type: "Polygon", coordinates: [ring] };
     }
-    return { type: "LineString", coordinates: pairs };
-  }
-
-  function pointerPoint(event) {
-    const p = svg.createSVGPoint();
-    p.x = event.clientX;
-    p.y = event.clientY;
-    const matrix = svg.getScreenCTM();
-    if (!matrix) return { x: 0, y: 0 };
-    const local = p.matrixTransform(matrix.inverse());
-    return {
-      x: Math.max(PAD, Math.min(WIDTH - PAD, local.x)),
-      y: Math.max(PAD, Math.min(HEIGHT - PAD, local.y))
-    };
+    return { type: "LineString", coordinates: copied };
   }
 
   function haversineMeters(a, b) {
@@ -150,7 +155,7 @@
     const pairs = objectCoordinates(object);
     if (object.geometry?.type === "LineString") {
       let total = 0;
-      for (let i = 1; i < pairs.length; i += 1) total += haversineMeters(pairs[i - 1], pairs[i]);
+      for (let index = 1; index < pairs.length; index += 1) total += haversineMeters(pairs[index - 1], pairs[index]);
       return `${total.toFixed(total < 100 ? 1 : 0)} m from real coordinates`;
     }
     if (object.geometry?.type === "Point" && pairs[0]) return `${pairs[0][1].toFixed(6)}, ${pairs[0][0].toFixed(6)}`;
@@ -165,42 +170,85 @@
     svg.append(group);
   }
 
+  function shapeForObject(object, points) {
+    if (object.geometry.type === "Point") {
+      const point = points[0];
+      return svgEl("circle", {
+        cx: point.x,
+        cy: point.y,
+        r: object.kind === "water_source" ? 9 : 7,
+        class: `object obj-point obj-${object.kind}`,
+        "data-object-id": object.id
+      });
+    }
+    const attrs = {
+      points: points.map(point => `${point.x},${point.y}`).join(" "),
+      class: `object obj-${object.kind}`,
+      "data-object-id": object.id
+    };
+    return svgEl(object.geometry.type === "Polygon" ? "polygon" : "polyline", attrs);
+  }
+
+  function updateRenderedShape(id, kind, pairs) {
+    const node = svg.querySelector(`[data-object-id="${id}"]`);
+    if (!node) return;
+    const points = pairs.map(toXY);
+    if (pointKinds.has(kind)) {
+      node.setAttribute("cx", points[0].x);
+      node.setAttribute("cy", points[0].y);
+    } else {
+      node.setAttribute("points", points.map(point => `${point.x},${point.y}`).join(" "));
+    }
+    const label = svg.querySelector(`[data-label-for="${id}"]`);
+    if (label && points[0]) {
+      label.setAttribute("x", points[0].x + 9);
+      label.setAttribute("y", points[0].y - 9);
+    }
+  }
+
   function drawObject(object) {
     const pairs = objectCoordinates(object);
     if (!pairs.length) return;
-    const pts = pairs.map(toXY);
-    let node;
-
-    if (object.geometry.type === "Point") {
-      const p = pts[0];
-      node = svgEl("circle", { cx: p.x, cy: p.y, r: object.kind === "water_source" ? 9 : 7, class: `object obj-point obj-${object.kind}` });
-    } else if (object.geometry.type === "Polygon") {
-      node = svgEl("polygon", { points: pts.map(p => `${p.x},${p.y}`).join(" "), class: `object obj-${object.kind}` });
-    } else {
-      node = svgEl("polyline", { points: pts.map(p => `${p.x},${p.y}`).join(" "), class: `object obj-${object.kind}` });
-    }
-
-    node.dataset.objectId = object.id;
+    const points = pairs.map(toXY);
+    const node = shapeForObject(object, points);
     if (selectedId === object.id) node.classList.add("selected");
     node.addEventListener("pointerup", event => {
-      if (activeKind !== "select" || dragging) return;
+      if (activeKind !== "select" || drag) return;
       event.stopPropagation();
       selectObject(object.id);
     });
     svg.append(node);
 
-    const labelAt = pts[0];
-    const label = svgEl("text", { x: labelAt.x + 9, y: labelAt.y - 9, class: "label" });
+    const firstPoint = points[0];
+    const label = svgEl("text", {
+      x: firstPoint.x + 9,
+      y: firstPoint.y - 9,
+      class: "label",
+      "data-label-for": object.id
+    });
     label.textContent = object.id;
     svg.append(label);
 
     if (editMode && selectedId === object.id) {
-      pts.forEach((p, index) => {
-        const handle = svgEl("circle", { cx: p.x, cy: p.y, r: 7, class: "handle", "data-handle-index": index });
+      points.forEach((point, index) => {
+        const handle = svgEl("circle", {
+          cx: point.x,
+          cy: point.y,
+          r: 7,
+          class: "handle",
+          "data-handle-index": index
+        });
         handle.addEventListener("pointerdown", event => {
+          event.preventDefault();
           event.stopPropagation();
-          handle.setPointerCapture?.(event.pointerId);
-          dragging = { id: object.id, index, pointerId: event.pointerId };
+          svg.setPointerCapture?.(event.pointerId);
+          drag = {
+            id: object.id,
+            kind: object.kind,
+            index,
+            pointerId: event.pointerId,
+            pairs: objectCoordinates(object)
+          };
         });
         svg.append(handle);
       });
@@ -210,13 +258,17 @@
   function drawDraft() {
     if (!draft.length) return;
     const points = draft.map(toXY);
-    if (points.length > 1) svg.append(svgEl("polyline", { points: points.map(p => `${p.x},${p.y}`).join(" "), class: "draft" }));
-    points.forEach(p => svg.append(svgEl("circle", { cx: p.x, cy: p.y, r: 6, class: "draft-point" })));
+    if (points.length > 1) svg.append(svgEl("polyline", { points: points.map(point => `${point.x},${point.y}`).join(" "), class: "draft" }));
+    points.forEach(point => svg.append(svgEl("circle", { cx: point.x, cy: point.y, r: 6, class: "draft-point" })));
+  }
+
+  function visibleObjects() {
+    return store.read().objects.filter(object => ["boundary", "main", "submain", "lateral", "plant", "water_source", "path", "device"].includes(object.kind));
   }
 
   function render() {
     const state = store.read();
-    const visible = state.objects.filter(object => ["boundary", "main", "submain", "lateral", "plant", "water_source", "path", "device"].includes(object.kind));
+    const visible = visibleObjects();
     bounds = computeBounds(visible);
     svg.replaceChildren();
     drawGrid();
@@ -233,7 +285,7 @@
       $("#status").textContent = `${tool} · no real coordinate anchor yet`;
       return;
     }
-    const pipeCount = visible.filter(o => ["main", "submain", "lateral"].includes(o.kind)).length;
+    const pipeCount = visible.filter(object => ["main", "submain", "lateral"].includes(object.kind)).length;
     const fieldCount = visible.length - pipeCount;
     $("#status").textContent = `${tool} · ${fieldCount} field object${fieldCount === 1 ? "" : "s"} · ${pipeCount} pipe${pipeCount === 1 ? "" : "s"} · canonical revision ${state.revision}`;
   }
@@ -274,6 +326,7 @@
     activeKind = kind;
     draft = [];
     editMode = false;
+    drag = null;
     if (kind !== "select") selectedId = null;
     $$('[data-kind]').forEach(button => button.classList.toggle("on", button.dataset.kind === kind));
     $("#finishBoundary").classList.remove("show");
@@ -285,7 +338,7 @@
     if (!bounds || !draft.length) return;
     if (activeKind === "boundary" && draft.length < 3) return;
     if (lineKinds.has(activeKind) && draft.length < 2) return;
-    const object = store.addObject(activeKind, geometryFromPoints(activeKind, draft), { source_surface: "spatial_drawing" }, "described");
+    const object = store.addObject(activeKind, geometryFromPairs(activeKind, draft), { source_surface: "spatial_drawing" }, "described");
     activeKind = "select";
     draft = [];
     selectedId = object.id;
@@ -294,54 +347,56 @@
     render();
   }
 
+  svg.addEventListener("pointermove", event => {
+    if (!drag || !bounds) return;
+    const lngLat = toLngLat(pointerPoint(event));
+    if (!lngLat || !drag.pairs[drag.index]) return;
+    drag.pairs[drag.index] = lngLat;
+    updateRenderedShape(drag.id, drag.kind, drag.pairs);
+    const handle = svg.querySelector(`[data-handle-index="${drag.index}"]`);
+    if (handle) {
+      const point = toXY(lngLat);
+      handle.setAttribute("cx", point.x);
+      handle.setAttribute("cy", point.y);
+    }
+  });
+
   svg.addEventListener("pointerup", event => {
-    if (dragging) return;
+    if (drag) {
+      const completed = drag;
+      drag = null;
+      try { svg.releasePointerCapture?.(event.pointerId); } catch {}
+      store.updateGeometry(completed.id, geometryFromPairs(completed.kind, completed.pairs), "drawing_vertex_edit");
+      return;
+    }
+
     if (activeKind === "select") {
       if (event.target === svg) clearSelection();
       return;
     }
     if (!bounds) return;
-    const ll = toLngLat(pointerPoint(event));
-    if (!ll) return;
 
+    const lngLat = toLngLat(pointerPoint(event));
+    if (!lngLat) return;
     if (pointKinds.has(activeKind)) {
-      draft = [ll];
+      draft = [lngLat];
       commitDraft();
       return;
     }
 
-    draft.push(ll);
-    if (lineKinds.has(activeKind) && draft.length === 2) commitDraft();
+    draft.push(lngLat);
+    if (lineKinds.has(activeKind) && draft.length === 2) {
+      commitDraft();
+      return;
+    }
     if (activeKind === "boundary" && draft.length >= 3) $("#finishBoundary").classList.add("show");
     render();
   });
 
-  svg.addEventListener("pointermove", event => {
-    if (!dragging || !bounds) return;
-    const object = store.read().objects.find(item => item.id === dragging.id);
-    if (!object) return;
-    const pairs = objectCoordinates(object);
-    const ll = toLngLat(pointerPoint(event));
-    if (!ll || !pairs[dragging.index]) return;
-    pairs[dragging.index] = ll;
-    const geometry = geometryFromPoints(object.kind, pairs);
-    const projected = pairs.map(toXY);
-    const handles = $$(`[data-handle-index]`, svg);
-    const handle = handles.find(item => Number(item.dataset.handleIndex) === dragging.index);
-    if (handle) {
-      const p = projected[dragging.index];
-      handle.setAttribute("cx", p.x);
-      handle.setAttribute("cy", p.y);
-    }
-    dragging.geometry = geometry;
-  });
-
-  svg.addEventListener("pointerup", event => {
-    if (!dragging) return;
-    if (dragging.geometry) store.updateGeometry(dragging.id, dragging.geometry, "drawing_vertex_edit");
-    dragging = null;
+  svg.addEventListener("pointercancel", () => {
+    drag = null;
     render();
-  }, true);
+  });
 
   $("#workButton").addEventListener("click", () => $("#workMenu").classList.toggle("open"));
   $("#closeWork").addEventListener("click", () => $("#workMenu").classList.remove("open"));
@@ -370,7 +425,6 @@
     selectedId = null;
     editMode = false;
     store.removeObject(id);
-    render();
   });
 
   $("#fitButton").addEventListener("click", render);
@@ -380,6 +434,7 @@
     activeKind = "select";
     draft = [];
     editMode = false;
+    drag = null;
     $("#workMenu").classList.remove("open");
     $("#finishBoundary").classList.remove("show");
     $$('[data-kind]').forEach(button => button.classList.toggle("on", button.dataset.kind === "select"));
