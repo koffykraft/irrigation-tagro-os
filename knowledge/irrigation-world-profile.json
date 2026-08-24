@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "status": "working_policy",
+  "purpose": "TAGRO/Kerala irrigation design bias for AI suggestions; these preferences do not override verified engineering limits or manufacturer data.",
+  "design_biases": {
+    "geography": ["Kerala", "small and mixed holdings", "backyards and estate blocks"],
+    "power": {
+      "preferred_supply": "single_phase_where_practical",
+      "preferred_pump_hp_max": 2.0,
+      "rule_type": "preference_not_hard_limit",
+      "reason": "cost, availability, serviceability and realistic small-field use"
+    },
+    "hydraulics": {
+      "prefer_low_pressure_when_technically_valid": true,
+      "consider_laminar_and_transitional_regimes_explicitly": true,
+      "minimize_unnecessary_head_and_energy": true,
+      "avoid_oversizing_without_explanation": true
+    },
+    "economics": {
+      "cost_efficiency_is_first_class": true,
+      "budget_may_drive_phasing": true,
+      "never_force_design_to_fit_unrealistic_budget": true,
+      "show_cost_vs_convenience_vs_future_expansion_tradeoffs": true
+    },
+    "human_factors": {
+      "prefer_controls_near_access_when_reasonable": true,
+      "consider_paths_gates_houses_sheds_tanks_and_daily_walking": true,
+      "allow_farmer_preferred_valve_and_control_points": true,
+      "explain_extra_pipe_length_for_access_or_future_ease": true
+    },
+    "field_types": [
+      "coconut", "pepper", "banana", "vegetables", "fruit_trees", "mixed_backyard", "mixed_estate", "nursery", "intercrop"
+    ],
+    "application_devices": [
+      "dripper", "pressure_compensating_dripper", "turbulent_dripper", "fan_jet", "spray_jet", "micro_sprinkler", "mini_sprinkler", "bubbler", "mister", "fogger"
+    ]
+  },
+  "behaviour": {
+    "assumptions_are_proposals": true,
+    "user_can_modify_any_non_verified_assumption": true,
+    "show_why": true,
+    "show_alternatives": true,
+    "geometry_proposals_require_acceptance": true,
+    "learning_must_not_silently_change_engineering_rules": true
+  }
+}
