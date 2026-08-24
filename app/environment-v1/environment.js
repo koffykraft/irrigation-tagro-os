@@ -45,7 +45,8 @@
     tool: "select",
     draft: [],
     selectedId: null,
-    adviser: { online: false, endpoint: null, checking: true }
+    adviser: { online: false, endpoint: null, checking: true },
+    engineering: { online: false, version: null, conformance: null, checkedAt: null, checking: true }
   };
 
   const el = {
@@ -116,6 +117,7 @@
       renderAll();
     } else if (surface === "design") {
       renderDesign();
+      void checkEngineering();
     } else if (surface === "materials") {
       renderMaterials();
     } else if (surface === "adviser") {
@@ -379,18 +381,30 @@
       [counts.main, "mains"], [counts.submain, "submains"], [counts.lateral, "laterals"], [counts.device + counts.plant, "plants / devices"]
     ];
     el.networkSummary.innerHTML = metrics.map(([n,label]) => `<div class="metric"><b>${n}</b><span>${label}</span></div>`).join("");
+
+    let engineText = "Unavailable · no PASS/FAIL issued";
+    if (state.engineering.checking) engineText = "Checking deterministic engine…";
+    else if (state.engineering.online && state.engineering.conformance?.pass) {
+      engineText = `${state.engineering.version || "deterministic engine"} · ${state.engineering.conformance.checks || 0}/${state.engineering.conformance.checks || 0} regression checks`;
+    } else if (state.engineering.online && state.engineering.conformance && !state.engineering.conformance.pass) {
+      engineText = "Conformance failed · engineering output blocked";
+    }
+
+    const openProposals = state.proposals.filter(p => p.ui_status !== "dismissed").length;
     const status = [
       ["Geometry", state.objects.length ? "Available as preliminary drawing" : "Nothing drawn yet"],
-      ["Hydraulics", "Not bound in this environment shell yet"],
+      ["Hydraulics", engineText],
       ["Spatial scale", "Map/measurement adapter not bound yet"],
-      ["AI proposals", "Must remain proposed until accepted"]
+      ["AI proposals", openProposals ? `${openProposals} proposal${openProposals === 1 ? "" : "s"} · none accepted automatically` : "None active"]
     ];
     el.engineeringStatus.innerHTML = `<div class="status-list">${status.map(([a,b]) => `<div class="status-row"><span>${a}</span><span>${b}</span></div>`).join("")}</div>`;
+
     const unknowns = [];
     if (!state.objects.some(o => o.kind === "boundary")) unknowns.push("No field boundary is known. That is fine for object-level work, but area-based design remains preliminary.");
     if (!state.objects.some(o => o.kind === "water_source")) unknowns.push("Water source has not been marked or described.");
-    if (counts.main + counts.submain + counts.lateral > 0) unknowns.push("Pipe lengths shown on this prototype canvas are not metres until a real map/measurement adapter supplies scale.");
-    unknowns.push("A hydraulic PASS/FAIL requires the deterministic engine and its required inputs; this shell does not invent them.");
+    if (counts.main + counts.submain + counts.lateral > 0) unknowns.push("Pipe lengths shown on this canvas are not metres until the real map/measurement adapter supplies scale.");
+    if (!state.engineering.online) unknowns.push("The deterministic engineering service is not currently reachable, so no hydraulic result should be treated as checked.");
+    else unknowns.push("The deterministic engine is available, but PASS/FAIL still requires the actual run length, flow and other required inputs for the item being checked.");
     el.designUnknowns.innerHTML = unknowns.map(x => `<div class="unknown">${escapeHtml(x)}</div>`).join("");
   }
 
@@ -433,6 +447,49 @@
     return msg;
   }
 
+  function renderProposalCards() {
+    state.proposals.filter(p => p.ui_status !== "dismissed").forEach(proposal => {
+      const card = document.createElement("div");
+      card.className = "message adviser";
+      const kind = String(proposal.kind || "proposal").replaceAll("_", " ");
+      const checks = Array.isArray(proposal.checks_required) && proposal.checks_required.length
+        ? `<div style="margin-top:6px;font-size:12px;opacity:.75">Needs checking: ${escapeHtml(proposal.checks_required.join(" · "))}</div>`
+        : "";
+      card.innerHTML = `<div class="meta">PROPOSAL · ${escapeHtml(kind.toUpperCase())}</div><div><b>${escapeHtml(proposal.summary || "Design option")}</b>${checks}</div>`;
+      const actions = document.createElement("div");
+      actions.className = "quick-replies";
+
+      const why = document.createElement("button");
+      why.type = "button";
+      why.textContent = "Why?";
+      why.addEventListener("click", () => sendFarmerMessage(`Why are you suggesting: ${proposal.summary || "this option"}? Explain it simply and do not add assumptions.`));
+      actions.append(why);
+
+      if (proposal.kind === "geometry") {
+        const preview = document.createElement("button");
+        preview.type = "button";
+        preview.textContent = "Preview drawing";
+        preview.disabled = true;
+        preview.title = "The deterministic geometry proposal adapter is not connected yet.";
+        actions.append(preview);
+      }
+
+      const dismiss = document.createElement("button");
+      dismiss.type = "button";
+      dismiss.textContent = "Not for this job";
+      dismiss.addEventListener("click", () => {
+        proposal.ui_status = "dismissed";
+        emit("proposal.dismissed", proposal.affected_ids || [], { proposal_id: proposal.proposal_id || null, summary: proposal.summary || null });
+        renderConversation();
+        if (state.surface === "design") renderDesign();
+      });
+      actions.append(dismiss);
+
+      card.append(actions);
+      el.conversation.append(card);
+    });
+  }
+
   function renderConversation() {
     el.conversation.replaceChildren();
     if (!state.conversation.messages.length) {
@@ -446,6 +503,7 @@
         el.conversation.append(div);
       });
     }
+    renderProposalCards();
     if (state.conversation.current_understanding) {
       el.reflection.hidden = false; el.reflectionText.textContent = state.conversation.current_understanding;
     } else el.reflection.hidden = true;
@@ -526,8 +584,16 @@
         state.conversation.current_understanding = extracted.understanding || null;
         state.conversation.next_question = extracted.next_question || null;
         state.conversation.question_reason = extracted.question_reason || null;
-        if (Array.isArray(extracted.proposals)) state.proposals.push(...extracted.proposals);
+        if (Array.isArray(extracted.proposals)) {
+          extracted.proposals.forEach(proposal => {
+            const id = proposal.proposal_id || `${proposal.kind || "proposal"}_${proposal.summary || ""}`;
+            if (!state.proposals.some(existing => (existing.proposal_id || `${existing.kind || "proposal"}_${existing.summary || ""}`) === id)) {
+              state.proposals.push({ ...proposal, ui_status: "open" });
+            }
+          });
+        }
         renderConversation(); renderAll();
+        if (state.surface === "design") renderDesign();
         el.aiStatus.textContent = "Connected adviser";
         return;
       } catch (err) {
@@ -557,7 +623,14 @@
       },
       geometry: { objects: state.objects.filter(o => ["boundary","path","main","submain","lateral","plant","water_source","device"].includes(o.kind)) },
       network: { relationships: state.relationships },
-      hydraulics: state.design_state,
+      hydraulics: {
+        ...state.design_state,
+        engine: {
+          online: state.engineering.online,
+          version: state.engineering.version,
+          conformance: state.engineering.conformance
+        }
+      },
       budget: {},
       preferences: { relationships: state.relationships.filter(r => r.type === "preferred_near") },
       product_query: { generic_allowed: true }
@@ -565,6 +638,16 @@
   }
 
   function extractAdviserText(data) {
+    const structured = data?.structured;
+    if (structured && typeof structured === "object" && typeof structured.message === "string") {
+      return {
+        text: structured.message,
+        understanding: structured.understanding ?? null,
+        next_question: structured.next_question ?? null,
+        question_reason: structured.question_reason ?? null,
+        proposals: Array.isArray(structured.proposals) ? structured.proposals : []
+      };
+    }
     const result = data?.result ?? data;
     if (typeof result === "string") return { text: result };
     const text = result?.response || result?.text || result?.result || result?.output_text || result?.message?.content;
@@ -591,6 +674,31 @@
       state.adviser.online = false; state.adviser.endpoint = null;
       el.aiStatus.textContent = "Adviser not connected · local guide";
     } finally { state.adviser.checking = false; }
+  }
+
+  async function checkEngineering() {
+    const service = window.TAGROEngineeringService;
+    state.engineering.checking = true;
+    if (state.surface === "design") renderDesign();
+    if (!service?.check) {
+      state.engineering = { online:false, version:null, conformance:null, checkedAt:now(), checking:false };
+      if (state.surface === "design") renderDesign();
+      return;
+    }
+    const result = await service.check(window.TAGRO_IRRIGATION_ENGINE_ENDPOINT || location.origin);
+    state.engineering = {
+      online: Boolean(result?.online),
+      version: result?.engine || null,
+      conformance: result?.conformance || null,
+      checkedAt: now(),
+      checking: false
+    };
+    state.design_state.engine = {
+      online: state.engineering.online,
+      version: state.engineering.version,
+      conformance: state.engineering.conformance
+    };
+    if (state.surface === "design") renderDesign();
   }
 
   function bindEvents() {
@@ -624,4 +732,5 @@
   renderDesign();
   renderMaterials();
   checkAdviser();
+  void checkEngineering();
 })();
