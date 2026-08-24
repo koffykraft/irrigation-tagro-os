@@ -1,0 +1,34 @@
+{
+  "id": "jain:j-sc-pc-plus",
+  "manufacturer": "Jain Irrigation",
+  "official_name": "J-SC PC-Plus Emitter",
+  "category": "pressure_compensating_online_emitter",
+  "source": {
+    "dropbox_path": "/jain-irrigation-agent/Product Files_JAIN/jain_drip/Emitters/J_SC_PC_Plus.pdf",
+    "manufacturer_pdf_verified": true
+  },
+  "specifications": {
+    "discharge_lph": [2.2, 4.2, 8.2],
+    "pressure_regulating_range_kg_cm2": [0.8, 3.0],
+    "filtration_micron_max": 130,
+    "extension_tube_id_mm": 4,
+    "recommended_punch_mm": 2.9,
+    "take_apart": true,
+    "self_cleaning": true,
+    "pressure_compensating": true,
+    "emitter_exponent": {"2.2_lph": 0.04, "4.2_lph": 0.03, "8.2_lph": 0.08}
+  },
+  "manufacturer_use_guidance": [
+    "open field orchards, fruit crops and vegetables",
+    "nurseries, pot and greenhouse irrigation",
+    "large section size and longer lateral runs",
+    "undulating terrain and steep slopes",
+    "problematic water conditions where emitter cleaning is required"
+  ],
+  "tagro_reasoning_hooks": [
+    "compare extra product cost against uniformity on long/undulating runs",
+    "consider when pressure variation makes a generic turbulent emitter less attractive",
+    "do not assume PC is worthwhile on a short level small-field run without explaining the benefit"
+  ],
+  "images": {"status": "pending_asset_extraction", "refs": []}
+}
