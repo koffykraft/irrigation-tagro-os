@@ -1,14 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tagro-irrigation-ai-staging",
+  "name": "jain-irrigation-v5-preview",
   "main": "src/index.ts",
   "compatibility_date": "2026-08-24",
   "vars": {
     "ENVIRONMENT": "staging",
-    "BUILD": "knowledge-v1",
+    "BUILD": "co-design-environment-v1",
     "AI_MODEL": ""
   },
   "ai": {
     "binding": "AI"
+  },
+  "assets": {
+    "directory": "../app/environment-v1",
+    "binding": "ASSETS",
+    "run_worker_first": true
   }
 }
