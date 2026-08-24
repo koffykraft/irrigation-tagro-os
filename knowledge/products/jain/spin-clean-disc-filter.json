@@ -1,0 +1,53 @@
+{
+  "knowledge_version": "jain-product-1.0.0",
+  "manufacturer": "Jain Irrigation Systems Ltd.",
+  "name": "Spin Clean Disc Filter",
+  "category": "hydrocyclone_disc_combination_filter",
+  "evidence_state": "manufacturer_document",
+  "source": {
+    "path": "/jain-irrigation-agent/Product Files_JAIN/jain_drip/Filters/Spinclean_Disc_Filter.pdf",
+    "dropbox_server_modified": "2026-08-02T05:45:31Z",
+    "document_scope": "product technical literature"
+  },
+  "function": {
+    "primary": "combined sand/silt separation and downstream three-dimensional disc filtration",
+    "stages": ["hydrocyclone separation","radially grooved disc filtration"],
+    "disc_flow_direction": "outside_to_inside"
+  },
+  "hydraulic": {
+    "maximum_operating_pressure_kg_cm2": 6,
+    "models": [
+      {"nominal_flow_m3_h":25,"connection_inch":2,"collection_chamber_litre":6},
+      {"nominal_flow_m3_h":40,"connection_inch":2.5,"collection_chamber_litre":12},
+      {"nominal_flow_m3_h":40,"connection_inch":3,"collection_chamber_litre":12},
+      {"nominal_flow_m3_h":50,"connection_inch":3,"collection_chamber_litre":12}
+    ],
+    "pressure_drop_note": "Manufacturer provides clean pressure-drop curves by size and flow; design must use actual operating flow rather than treating filter loss as zero."
+  },
+  "construction_and_service": {
+    "standard_material": "mild steel",
+    "standard_protection": "internal/external epoxy powder coating",
+    "stainless_steel_special_order": true,
+    "separate_drain_for_hydrocyclone_and_disc_filter": true,
+    "pressure_check_assembly": true,
+    "multiple_battery_option_for_higher_flow": true
+  },
+  "application": {
+    "manufacturer_example": "micro-irrigation removal of sand and silt particles from irrigation water"
+  },
+  "design_adviser_hooks": {
+    "consider_when": [
+      "water carries both heavier mineral particles and finer contaminants",
+      "a compact combined separation/filtration arrangement is useful"
+    ],
+    "do_not_assume": [
+      "that a combined filter is automatically better or cheaper for a small clean-water job",
+      "that filter pressure loss is negligible",
+      "that nominal filter flow equals the actual design flow",
+      "that the filtration grade required by the chosen emitters is satisfied without verifying the disc specification"
+    ],
+    "ask_or_compare": ["source-water contamination type","system flow","emitter filtration requirement","available pressure/head","flush access and drain location","capital cost versus simpler staged filters"]
+  },
+  "generic_comparison_tags": ["disc_filter","hydrocyclone","combined_filter","sand_silt","micro_irrigation_filter"],
+  "image": {"status":"pending_asset_extraction","source_document_available":true}
+}
