@@ -1,0 +1,1 @@
+WORKING. Deterministic routes are wired into the staging Worker configuration. Cloudflare runtime deployment and live conformance response are not yet verified in this chat.
