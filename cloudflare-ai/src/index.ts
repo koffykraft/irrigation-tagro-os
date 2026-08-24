@@ -2,16 +2,14 @@ import worldProfile from "../../knowledge/irrigation-world-profile.json";
 import engineeringBasis from "../../knowledge/engineering-basis.json";
 import sourceRegistry from "../../knowledge/source-registry.json";
 import adviserResponseSchema from "../../schemas/ai-adviser-response-v1.0.schema.json";
-import jscpc from "../../knowledge/products/jain/j-sc-pc-plus.json";
-import jloc from "../../knowledge/products/jain/j-loc.json";
-import jainJet from "../../knowledge/products/jain/jain-jet.json";
-import modularSprinkler from "../../knowledge/products/jain/modular-sprinkler.json";
-import jMiniSprinkler from "../../knowledge/products/jain/j-mini-sprinkler.json";
-import turboPc from "../../knowledge/products/jain/turbo-pc.json";
-import ghoomar from "../../knowledge/products/jain/ghoomar-sand-separator.json";
-import venturiInjector from "../../knowledge/products/jain/venturi-injector.json";
-import spinCleanDisc from "../../knowledge/products/jain/spin-clean-disc-filter.json";
 import { stampProposal } from "./intent-guard";
+import {
+  PRODUCTS,
+  PRODUCT_INDEX,
+  productTerms,
+  selectProducts,
+  productsBySearchTerm
+} from "./product-knowledge";
 import {
   ENGINE_VERSION,
   assessRun,
@@ -61,18 +59,6 @@ type ContextRequest = {
   product_query?: { categories?: string[]; manufacturer?: string; generic_allowed?: boolean };
 };
 
-const PRODUCTS: any[] = [
-  jscpc, jloc, jainJet, modularSprinkler, jMiniSprinkler,
-  turboPc, ghoomar, venturiInjector, spinCleanDisc
-];
-
-const PRODUCT_INDEX = PRODUCTS.map((p: any) => ({
-  name: p.name,
-  manufacturer: p.manufacturer,
-  category: p.category,
-  generic_comparison_tags: p.generic_comparison_tags ?? []
-}));
-
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data, null, 2), {
   status,
   headers: {
@@ -84,52 +70,10 @@ const json = (data: unknown, status = 200) => new Response(JSON.stringify(data, 
   }
 });
 
-function searchableProductText(p: any) {
-  return [
-    p.name,
-    p.category,
-    ...(p.generic_comparison_tags ?? []),
-    ...(p.application?.manufacturer_examples ?? []),
-    ...(p.application?.useful_when_considering ?? []),
-    ...(p.design_adviser_hooks?.consider_when ?? [])
-  ].join(" ").toLowerCase();
-}
-
-function productTerms(body: ContextRequest) {
-  const explicit = body.product_query?.categories?.map(x => String(x).toLowerCase()) ?? [];
-  if (explicit.length) return explicit;
-  const q = String(body.user_request ?? "").toLowerCase();
-  const terms: string[] = [];
-  const add = (...values: string[]) => terms.push(...values);
-
-  if (/drip|dripper|emitter|point source|pcnl|pressure compens/.test(q)) add("emitter", "dripper", "pressure_compensating");
-  if (/jet|fan jet|spray jet|wetting pattern/.test(q)) add("jet", "broad_wetting", "micro_jet");
-  if (/mini sprinkler|under foliage|nursery/.test(q)) add("mini_sprinkler", "under_foliage", "nursery");
-  if (/micro sprinkler|sprinkler|broad wet|orchard spray/.test(q)) add("micro_sprinkler", "sprinkler", "broad_wetting");
-  if (/filter|sand|grit|borewell|well water|hydrocyclone|disc/.test(q)) add("filter", "sand_separator", "disc_filter", "well_water");
-  if (/fertig|fertiliz|fertilis|venturi|inject|chemical dosing|nutrient/.test(q)) add("venturi", "fertigation", "fertilizer_injector", "differential_pressure");
-  return [...new Set(terms)];
-}
-
-function selectProducts(body: ContextRequest) {
-  const terms = productTerms(body);
-  if (!terms.length) return [];
-  return PRODUCTS
-    .map((p: any) => {
-      const haystack = searchableProductText(p);
-      const score = terms.reduce((n, term) => n + (haystack.includes(term) ? 1 : 0), 0);
-      return { product: p, score };
-    })
-    .filter(x => x.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map(x => x.product);
-}
-
 function buildContext(body: ContextRequest) {
   const productCandidates = selectProducts(body);
   return {
-    context_version: "irrigation-context-1.7.0",
+    context_version: "irrigation-context-1.8.0",
     generated_at: new Date().toISOString(),
     task: body.task ?? "irrigation_design_advice",
     user_request: body.user_request ?? null,
@@ -151,6 +95,7 @@ function buildContext(body: ContextRequest) {
     product_retrieval: {
       terms: productTerms(body),
       candidate_count: productCandidates.length,
+      total_normalized_products: PRODUCTS.length,
       rule: "Detailed manufacturer records are supplied only when relevant to the current question or an explicit product category request."
     },
     source_registry: sourceRegistry,
@@ -189,6 +134,7 @@ function adviserSystemPrompt() {
     "The product catalogue index tells you what product knowledge exists; detailed product_candidates are the records retrieved for the current question. Do not invent specifications for products that are only in the index.",
     "A Jain product may be useful evidence or an option, but do not force Jain where a generic requirement is sufficient or a simpler product better fits the farmer's priorities.",
     "Treat filtration and fertigation as hydraulic/network decisions: pressure loss, source-water contamination, device filtration requirement, injection differential and service access can matter.",
+    "Distinguish dripper, jet, micro/mini sprinkler, under-tree sprinkler, bubbler, mister and fogger by their actual application behaviour; do not flatten them into one emitter category.",
     "Geometry proposals must be expressed as design intent anchored to existing entity IDs. Never invent final map/canvas coordinates.",
     "Never calculate or invent hydraulic PASS/FAIL, permissible length, required sections or runtime yourself. Use deterministic results already supplied in context; otherwise name the deterministic check that is needed.",
     "If a low-cost option trades capital for longer irrigation time, more manual work, more sections or less convenience, explain that plainly and do not present it as viable until required deterministic checks are listed or already passed.",
@@ -296,7 +242,7 @@ export default {
     if (url.pathname === "/api/knowledge/products") {
       const category = url.searchParams.get("category")?.toLowerCase();
       if (!category) return json({ count: PRODUCTS.length, index: PRODUCT_INDEX });
-      const items = PRODUCTS.filter((p: any) => searchableProductText(p).includes(category));
+      const items = productsBySearchTerm(category);
       return json({ count: items.length, items });
     }
     if (url.pathname === "/api/contracts/adviser-response") return json(adviserResponseSchema);
