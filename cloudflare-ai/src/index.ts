@@ -1,6 +1,7 @@
 import worldProfile from "../../knowledge/irrigation-world-profile.json";
 import engineeringBasis from "../../knowledge/engineering-basis.json";
 import sourceRegistry from "../../knowledge/source-registry.json";
+import adviserResponseSchema from "../../schemas/ai-adviser-response-v1.0.schema.json";
 import jscpc from "../../knowledge/products/jain/j-sc-pc-plus.json";
 import jloc from "../../knowledge/products/jain/j-loc.json";
 import jainJet from "../../knowledge/products/jain/jain-jet.json";
@@ -62,7 +63,7 @@ function selectProducts(body: ContextRequest) {
 
 function buildContext(body: ContextRequest) {
   return {
-    context_version: "irrigation-context-1.2.0",
+    context_version: "irrigation-context-1.3.0",
     generated_at: new Date().toISOString(),
     task: body.task ?? "irrigation_design_advice",
     user_request: body.user_request ?? null,
@@ -89,6 +90,7 @@ function buildContext(body: ContextRequest) {
       manufacturer_specs_are_not_overridden_by_learning: true,
       tagro_policy_generates_options_but_does_not_force_answers: true,
       geometry_changes_are_proposals_until_human_acceptance: true,
+      ai_outputs_intent_not_final_coordinates: true,
       learned_patterns_are_observations_not_rules: true,
       unknown_is_not_zero: true,
       explain_tradeoffs: true
@@ -106,21 +108,40 @@ function adviserPrompt(context: unknown) {
           "Be conversational, calm and practical. Do not sound like a technical report unless the user asks for one.",
           "Understand the farmer's need before recommending products or a complete system.",
           "Ask one useful question at a time when more information would materially change the advice.",
-          "Never present an assumption, learned pattern or crop default as a known fact. Say what you know, what you are assuming, and what you still need only when it matters.",
+          "Never present an assumption, learned pattern or crop default as a known fact.",
           "Use ordinary language first. Translate technical results into practical consequences such as more time, more sections, easier access, higher cost or better uniformity.",
           "Only expose hydraulic jargon, equations, pressure details, permissible-length calculations or product specifications when requested or when a technical limit must be made clear to avoid an invalid design.",
           "Do not treat 2 HP, single phase, a particular pipe size, emitter type, or budget as a fixed design rule. They are context and trade-off signals.",
           "Keep affordability, willingness to spend, quality preference, time tolerance, labour tolerance, convenience and future expansion as separate revisable dimensions. Never stereotype a person from sparse information.",
-          "Use only the supplied context for specific product or engineering claims. Distinguish engineering evidence, manufacturer evidence, TAGRO policy and learned preference.",
-          "Generate options, questions and reversible proposals; never claim to have changed accepted geometry.",
-          "If a low-cost option trades capital for longer irrigation time, more manual work, more sections or less convenience, explain that plainly and validate it against deterministic hydraulics before presenting it as viable.",
+          "Use only the supplied context for specific product or engineering claims. Distinguish engineering evidence, manufacturer evidence, TAGRO policy and learned observation.",
+          "Geometry proposals must be expressed as design intent anchored to existing entity IDs. Never invent final map/canvas coordinates.",
+          "If a low-cost option trades capital for longer irrigation time, more manual work, more sections or less convenience, explain that plainly and do not present it as viable until required deterministic checks are listed or already passed.",
           "If evidence is missing, do not fill the gap with presumed information. Ask, offer a cautious starting point, or say not enough is known yet.",
-          "Default response shape: brief understanding of what the farmer is trying to achieve; then either one next question or at most a few relevant options. Put deeper technical detail behind an explicit request or a why explanation."
+          "Default response: brief understanding; then one consequential question OR a small number of useful proposals. Do not fill proposals merely because the schema permits them."
         ].join(" ")
       },
       { role: "user", content: JSON.stringify(context) }
-    ]
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: adviserResponseSchema
+    }
   };
+}
+
+function normalizeStructuredResult(result: any) {
+  const response = result?.response ?? result;
+  if (!response || typeof response !== "object" || typeof response.message !== "string") {
+    throw new Error("Workers AI did not return the adviser response contract");
+  }
+  const proposals = Array.isArray(response.proposals)
+    ? response.proposals.map((proposal: any, index: number) => ({
+        id: crypto.randomUUID ? crypto.randomUUID() : `prop_${Date.now()}_${index + 1}`,
+        status: "proposed",
+        ...proposal
+      }))
+    : [];
+  return { ...response, proposals };
 }
 
 export default {
@@ -151,6 +172,7 @@ export default {
         ai_binding: aiBinding,
         ai_model_configured: aiModel,
         ai_ready: aiReady,
+        structured_output: "ai-adviser-response-v1.0",
         assets_bound: Boolean(env.ASSETS),
         product_seed_count: PRODUCTS.length
       });
@@ -160,6 +182,7 @@ export default {
     if (url.pathname === "/api/knowledge/engineering") return json(engineeringBasis);
     if (url.pathname === "/api/knowledge/sources") return json(sourceRegistry);
     if (url.pathname === "/api/knowledge/products") return json({ count: PRODUCTS.length, items: PRODUCTS });
+    if (url.pathname === "/api/contracts/adviser-response") return json(adviserResponseSchema);
 
     if (url.pathname === "/api/ai/context" && req.method === "POST") {
       const body = await req.json<ContextRequest>().catch(() => null);
@@ -178,12 +201,22 @@ export default {
           detail: "Context assembly is operational. Bind Workers AI and configure AI_MODEL to enable adviser responses."
         }, 501);
       }
-      const result = await env.AI.run(env.AI_MODEL, adviserPrompt(context));
-      return json({
-        context_version: (context as any).context_version,
-        result,
-        proposal_status: "AI output is advisory until validated/accepted"
-      });
+      try {
+        const raw = await env.AI.run(env.AI_MODEL, adviserPrompt(context));
+        const structured = normalizeStructuredResult(raw);
+        return json({
+          context_version: (context as any).context_version,
+          result: structured.message,
+          structured,
+          proposal_status: "All returned proposals remain proposed until human acceptance and deterministic validation."
+        });
+      } catch (error: any) {
+        return json({
+          error: "structured adviser response failed",
+          detail: String(error?.message ?? error),
+          context_version: (context as any).context_version
+        }, 502);
+      }
     }
 
     if (url.pathname.startsWith("/api/")) return json({ error: "not found" }, 404);
