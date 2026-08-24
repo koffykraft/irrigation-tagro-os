@@ -73,7 +73,7 @@
     el.toast.textContent = text;
     el.toast.classList.add("show");
     clearTimeout(toast.timer);
-    toast.timer = setTimeout(() => el.toast.classList.remove("show"), 1800);
+    toast.timer = setTimeout(() => el.toast.classList.remove("show"), 2200);
   }
 
   function nextId(kind) {
@@ -104,6 +104,36 @@
     return object;
   }
 
+  function makeAcceptedProposalObject(spec, proposal) {
+    const id = nextId(spec.kind);
+    const points = (spec.geometry?.points || []).map(p => ({ x:Number(p.x), y:Number(p.y), lat:null, lng:null }));
+    const evidenceId = addEvidence(
+      "accepted",
+      "current_user",
+      "choose",
+      { proposal_id: proposal.proposal_id || null, summary: proposal.summary || null, acceptance_scope: "geometry_only" },
+      [id],
+      { proposal_id: proposal.proposal_id || null }
+    );
+    const object = {
+      id,
+      kind: spec.kind,
+      state: "accepted",
+      geometry: { type: spec.geometry?.type || "line", points },
+      properties: {
+        ...(spec.properties || {}),
+        accepted_from_proposal: proposal.proposal_id || null,
+        acceptance_scope: "geometry_only"
+      },
+      evidence_ids: [evidenceId],
+      created_at: now(),
+      updated_at: now()
+    };
+    state.objects.push(object);
+    emit("geometry.proposal_accepted", [id], { proposal_id: proposal.proposal_id || null, acceptance_scope: "geometry_only" });
+    return object;
+  }
+
   function setSurface(surface) {
     state.surface = surface;
     el.app.dataset.surface = surface;
@@ -128,9 +158,7 @@
   }
 
   function openWorkMenu() {
-    if (!(state.surface === "field" || state.surface === "drawing")) {
-      setSurface("field");
-    }
+    if (!(state.surface === "field" || state.surface === "drawing")) setSurface("field");
     el.workMenuTitle.textContent = state.surface === "drawing" ? "Work on drawing" : "Work on field";
     el.workMenu.classList.add("open");
     el.workButton.setAttribute("aria-expanded", "true");
@@ -237,20 +265,23 @@
   function objectNode(object) {
     const pts = object.geometry.points;
     let node;
-    if (object.geometry.type === "polygon") {
-      node = svgEl("polygon", { points: pts.map(p => `${p.x},${p.y}`).join(" ") });
-    } else if (object.geometry.type === "point") {
+    if (object.geometry.type === "polygon") node = svgEl("polygon", { points: pts.map(p => `${p.x},${p.y}`).join(" ") });
+    else if (object.geometry.type === "point") {
       const r = object.kind === "plant" ? 7 : 9;
       node = svgEl("circle", { cx: pts[0].x, cy: pts[0].y, r });
-    } else {
-      node = svgEl("polyline", { points: pts.map(p => `${p.x},${p.y}`).join(" ") });
-    }
+    } else node = svgEl("polyline", { points: pts.map(p => `${p.x},${p.y}`).join(" ") });
     node.dataset.objectId = object.id;
     node.classList.add("object", `obj-${object.kind}`);
     if (object.geometry.type === "point") node.classList.add("point-object");
     if (object.id === state.selectedId) node.classList.add("selected");
     if (object.state === "proposed") node.classList.add("proposed");
     return node;
+  }
+
+  function activePreviewObjects() {
+    return state.proposals
+      .filter(p => p.ui_status === "previewing" && Array.isArray(p.preview_objects))
+      .flatMap(p => p.preview_objects.map(spec => ({ ...spec, id: spec.temp_id || `preview_${Math.random()}` })));
   }
 
   function renderCanvas(svg, mode) {
@@ -263,6 +294,7 @@
     }
     const order = ["boundary", "path", "main", "submain", "lateral", "water_source", "plant", "device", "valve", "filter", "venturi", "pump", "tank"];
     [...state.objects].sort((a,b) => order.indexOf(a.kind) - order.indexOf(b.kind)).forEach(object => svg.append(objectNode(object)));
+    activePreviewObjects().forEach(object => svg.append(objectNode(object)));
     if (state.draft.length) {
       const points = state.draft.map(p => `${p.x},${p.y}`).join(" ");
       if (state.tool === "boundary") svg.append(svgEl("polyline", { points, class: "draft-line" }));
@@ -283,6 +315,7 @@
     const bits = [];
     if (realityCount) bits.push(`${realityCount} field object${realityCount === 1 ? "" : "s"}`);
     if (networkCount) bits.push(`${networkCount} pipe${networkCount === 1 ? "" : "s"}`);
+    if (activePreviewObjects().length) bits.push("preview visible");
     el.jobStatus.textContent = bits.length ? `Preliminary · ${bits.join(" · ")}` : "Preliminary · nothing assumed";
   }
 
@@ -294,8 +327,7 @@
     el.selectionName.textContent = `${id} · ${LABEL[object.kind] || object.kind}`;
     el.selectionState.textContent = `${object.state} · same object in FIELD and DRAWING`;
     el.selectionActions.replaceChildren();
-    const actions = contextualActions(object);
-    actions.forEach(action => {
+    contextualActions(object).forEach(action => {
       const btn = document.createElement("button");
       btn.type = "button"; btn.textContent = action.label;
       if (action.primary) btn.classList.add("primary");
@@ -390,7 +422,7 @@
       engineText = "Conformance failed · engineering output blocked";
     }
 
-    const openProposals = state.proposals.filter(p => p.ui_status !== "dismissed").length;
+    const openProposals = state.proposals.filter(p => ["open","previewing"].includes(p.ui_status)).length;
     const status = [
       ["Geometry", state.objects.length ? "Available as preliminary drawing" : "Nothing drawn yet"],
       ["Hydraulics", engineText],
@@ -447,15 +479,72 @@
     return msg;
   }
 
+  function proposalReasonText(reason) {
+    const map = {
+      submain_anchor_required: "Draw or select the submain first.",
+      main_anchor_required: "Draw or select the main first.",
+      mark_plants_or_devices_first: "Mark the plants or application points first.",
+      real_map_scale_required_for_metric_spacing: "Metric spacing needs the real map/measurement scale before it can be previewed honestly.",
+      real_map_scale_or_row_model_required: "That direction needs the real field scale or a confirmed row model first.",
+      operation_not_supported_by_geometry_preview: "This proposal is not yet supported by the geometry preview adapter."
+    };
+    return map[reason] || "This proposal needs more field information before it can be drawn safely.";
+  }
+
+  function previewProposal(proposal) {
+    const adapter = window.TAGROGeometryProposal;
+    if (!adapter?.preview) {
+      toast("Geometry preview is not available.");
+      return;
+    }
+    const result = adapter.preview(proposal,state);
+    if (!result?.ok) {
+      proposal.preview_error = result?.reason || "preview_unavailable";
+      toast(proposalReasonText(proposal.preview_error));
+      renderConversation();
+      return;
+    }
+    proposal.preview_objects = result.objects || [];
+    proposal.preview_note = result.note || null;
+    proposal.preview_error = null;
+    proposal.ui_status = "previewing";
+    emit("proposal.previewed", proposal.affected_ids || [], { proposal_id: proposal.proposal_id || null, objects: proposal.preview_objects.length });
+    renderAll();
+    renderConversation();
+    toast("Preview ready on FIELD and DRAWING.");
+  }
+
+  function clearProposalPreview(proposal) {
+    proposal.preview_objects = [];
+    proposal.ui_status = "open";
+    emit("proposal.preview_cleared", proposal.affected_ids || [], { proposal_id: proposal.proposal_id || null });
+    renderAll();
+    renderConversation();
+  }
+
+  function acceptProposalGeometry(proposal) {
+    if (!Array.isArray(proposal.preview_objects) || !proposal.preview_objects.length) return;
+    const created = proposal.preview_objects.map(spec => makeAcceptedProposalObject(spec,proposal));
+    proposal.preview_objects = [];
+    proposal.ui_status = "accepted_geometry";
+    emit("proposal.geometry_accepted", created.map(x=>x.id), { proposal_id: proposal.proposal_id || null, design_maturity: state.maturity });
+    renderAll();
+    renderConversation();
+    renderDesign();
+    toast("Geometry accepted. Engineering is still preliminary.");
+  }
+
   function renderProposalCards() {
-    state.proposals.filter(p => p.ui_status !== "dismissed").forEach(proposal => {
+    state.proposals.filter(p => ["open","previewing"].includes(p.ui_status)).forEach(proposal => {
       const card = document.createElement("div");
       card.className = "message adviser";
       const kind = String(proposal.kind || "proposal").replaceAll("_", " ");
       const checks = Array.isArray(proposal.checks_required) && proposal.checks_required.length
         ? `<div style="margin-top:6px;font-size:12px;opacity:.75">Needs checking: ${escapeHtml(proposal.checks_required.join(" · "))}</div>`
         : "";
-      card.innerHTML = `<div class="meta">PROPOSAL · ${escapeHtml(kind.toUpperCase())}</div><div><b>${escapeHtml(proposal.summary || "Design option")}</b>${checks}</div>`;
+      const previewNote = proposal.preview_note ? `<div style="margin-top:6px;font-size:12px;opacity:.75">${escapeHtml(proposal.preview_note)}</div>` : "";
+      const previewError = proposal.preview_error ? `<div style="margin-top:6px;font-size:12px;opacity:.75">${escapeHtml(proposalReasonText(proposal.preview_error))}</div>` : "";
+      card.innerHTML = `<div class="meta">PROPOSAL · ${escapeHtml(kind.toUpperCase())}</div><div><b>${escapeHtml(proposal.summary || "Design option")}</b>${checks}${previewNote}${previewError}</div>`;
       const actions = document.createElement("div");
       actions.className = "quick-replies";
 
@@ -466,20 +555,35 @@
       actions.append(why);
 
       if (proposal.kind === "geometry") {
-        const preview = document.createElement("button");
-        preview.type = "button";
-        preview.textContent = "Preview drawing";
-        preview.disabled = true;
-        preview.title = "The deterministic geometry proposal adapter is not connected yet.";
-        actions.append(preview);
+        if (proposal.ui_status === "previewing") {
+          const use = document.createElement("button");
+          use.type = "button";
+          use.textContent = "Use this geometry";
+          use.addEventListener("click", () => acceptProposalGeometry(proposal));
+          actions.append(use);
+
+          const clear = document.createElement("button");
+          clear.type = "button";
+          clear.textContent = "Clear preview";
+          clear.addEventListener("click", () => clearProposalPreview(proposal));
+          actions.append(clear);
+        } else {
+          const preview = document.createElement("button");
+          preview.type = "button";
+          preview.textContent = "Preview drawing";
+          preview.addEventListener("click", () => previewProposal(proposal));
+          actions.append(preview);
+        }
       }
 
       const dismiss = document.createElement("button");
       dismiss.type = "button";
       dismiss.textContent = "Not for this job";
       dismiss.addEventListener("click", () => {
+        proposal.preview_objects = [];
         proposal.ui_status = "dismissed";
         emit("proposal.dismissed", proposal.affected_ids || [], { proposal_id: proposal.proposal_id || null, summary: proposal.summary || null });
+        renderAll();
         renderConversation();
         if (state.surface === "design") renderDesign();
       });
@@ -508,8 +612,7 @@
       el.reflection.hidden = false; el.reflectionText.textContent = state.conversation.current_understanding;
     } else el.reflection.hidden = true;
     el.quickReplies.replaceChildren();
-    const replies = quickReplyOptions();
-    replies.forEach(text => {
+    quickReplyOptions().forEach(text => {
       const b = document.createElement("button"); b.type = "button"; b.textContent = text;
       b.addEventListener("click", () => sendFarmerMessage(text)); el.quickReplies.append(b);
     });
@@ -588,7 +691,7 @@
           extracted.proposals.forEach(proposal => {
             const id = proposal.proposal_id || `${proposal.kind || "proposal"}_${proposal.summary || ""}`;
             if (!state.proposals.some(existing => (existing.proposal_id || `${existing.kind || "proposal"}_${existing.summary || ""}`) === id)) {
-              state.proposals.push({ ...proposal, ui_status: "open" });
+              state.proposals.push({ ...proposal, ui_status: "open", preview_objects: [] });
             }
           });
         }
