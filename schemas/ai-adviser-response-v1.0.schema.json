@@ -61,8 +61,22 @@
               "anchor_ids": {"type": "array", "items": {"type": "string"}},
               "parameters": {
                 "type": "object",
-                "additionalProperties": true,
-                "description": "Design intent parameters only. AI must not output final canvas/map coordinates. Geometry adapters resolve coordinates from authoritative geometry."
+                "additionalProperties": false,
+                "description": "Design intent only. Null/unknown fields are preferable to invented values. Final map/canvas coordinates are forbidden.",
+                "required": ["spacing_m", "run_length_m", "count", "side", "direction_basis", "operating_groups", "pipe_size_mm", "device_category", "product_family", "stage", "notes"],
+                "properties": {
+                  "spacing_m": {"type": ["number", "null"], "description": "Requested/confirmed spacing only; null if not known."},
+                  "run_length_m": {"type": ["number", "null"], "description": "Requested/confirmed intended run length only; null if not known."},
+                  "count": {"type": ["integer", "null"], "description": "Requested/derived count only when grounded in supplied context; otherwise null."},
+                  "side": {"enum": ["left", "right", "both", "unknown"]},
+                  "direction_basis": {"enum": ["plants", "rows", "boundary", "submain", "path", "user_mark", "unknown"]},
+                  "operating_groups": {"type": ["integer", "null"]},
+                  "pipe_size_mm": {"type": ["number", "null"], "description": "Only a candidate/confirmed size, never a silently accepted design size."},
+                  "device_category": {"type": ["string", "null"]},
+                  "product_family": {"type": ["string", "null"]},
+                  "stage": {"enum": ["current", "future", "phased", "unknown"]},
+                  "notes": {"type": "array", "items": {"type": "string"}}
+                }
               }
             }
           },
@@ -80,8 +94,21 @@
           },
           "consequences": {
             "type": "object",
-            "additionalProperties": true,
-            "description": "Known or explicitly unknown consequences across cost/time/labour/energy/convenience/future expansion. Do not invent numeric consequences."
+            "additionalProperties": false,
+            "required": ["capital_cost", "operating_time", "manual_work", "energy", "convenience", "future_readiness", "quantified_notes"],
+            "properties": {
+              "capital_cost": {"enum": ["lower", "similar", "higher", "unknown"]},
+              "operating_time": {"enum": ["shorter", "similar", "longer", "unknown"]},
+              "manual_work": {"enum": ["less", "similar", "more", "unknown"]},
+              "energy": {"enum": ["lower", "similar", "higher", "unknown"]},
+              "convenience": {"enum": ["lower", "similar", "higher", "unknown"]},
+              "future_readiness": {"enum": ["lower", "similar", "higher", "unknown"]},
+              "quantified_notes": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Only numbers already supplied by deterministic engines or authoritative sources. Never invent costs, metres, flow, pressure or time."
+              }
+            }
           },
           "source_refs": {"type": "array", "items": {"type": "string"}},
           "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
