@@ -11,8 +11,12 @@ type Env = {
   ENVIRONMENT?: string;
   BUILD?: string;
   ASSETS?: Fetcher;
-  AI?: { run: (model: string, input: unknown) => Promise<unknown> };
+  AI?: {
+    run: (model: string, input: unknown, options?: Record<string, unknown>) => Promise<unknown>;
+    aiGatewayLogId?: string;
+  };
   AI_MODEL?: string;
+  AI_GATEWAY?: string;
 };
 
 type FarmerContext = {
@@ -64,7 +68,7 @@ function selectProducts(body: ContextRequest) {
 
 function buildContext(body: ContextRequest) {
   return {
-    context_version: "irrigation-context-1.3.0",
+    context_version: "irrigation-context-1.4.0",
     generated_at: new Date().toISOString(),
     task: body.task ?? "irrigation_design_advice",
     user_request: body.user_request ?? null,
@@ -99,42 +103,66 @@ function buildContext(body: ContextRequest) {
   };
 }
 
+function adviserSystemPrompt() {
+  return [
+    "You are the TAGRO Irrigation Design Adviser, speaking with a farmer or field designer.",
+    "Be conversational, calm and practical. Do not sound like a technical report unless the user asks for one.",
+    "Understand the farmer's need before recommending products or a complete system.",
+    "Ask one useful question at a time when more information would materially change the advice.",
+    "Never present an assumption, learned pattern or crop default as a known fact.",
+    "Use ordinary language first. Translate technical results into practical consequences such as more time, more sections, easier access, higher cost or better uniformity.",
+    "Only expose hydraulic jargon, equations, pressure details, permissible-length calculations or product specifications when requested or when a technical limit must be made clear to avoid an invalid design.",
+    "Do not treat 2 HP, single phase, a particular pipe size, emitter type, or budget as a fixed design rule. They are context and trade-off signals.",
+    "Keep affordability, willingness to spend, quality preference, time tolerance, labour tolerance, convenience and future expansion as separate revisable dimensions. Never stereotype a person from sparse information.",
+    "Use only the supplied context for specific product or engineering claims. Distinguish engineering evidence, manufacturer evidence, TAGRO policy and learned observation.",
+    "Geometry proposals must be expressed as design intent anchored to existing entity IDs. Never invent final map/canvas coordinates.",
+    "If a low-cost option trades capital for longer irrigation time, more manual work, more sections or less convenience, explain that plainly and do not present it as viable until required deterministic checks are listed or already passed.",
+    "If evidence is missing, do not fill the gap with presumed information. Ask, offer a cautious starting point, or say not enough is known yet.",
+    "Default response: brief understanding; then one consequential question OR a small number of useful proposals. Do not fill proposals merely because the schema permits them."
+  ].join(" ");
+}
+
+function anthropicSchema(value: any): any {
+  if (Array.isArray(value)) return value.map(anthropicSchema);
+  if (!value || typeof value !== "object") return value;
+  const out: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(value)) {
+    if (["$schema", "$id", "minimum", "maximum", "minLength", "maxLength", "minItems", "maxItems", "pattern", "format"].includes(key)) continue;
+    out[key] = anthropicSchema(child);
+  }
+  return out;
+}
+
 function adviserPrompt(context: unknown) {
   return {
-    messages: [
-      {
-        role: "system",
-        content: [
-          "You are the TAGRO Irrigation Design Adviser, speaking with a farmer or field designer.",
-          "Be conversational, calm and practical. Do not sound like a technical report unless the user asks for one.",
-          "Understand the farmer's need before recommending products or a complete system.",
-          "Ask one useful question at a time when more information would materially change the advice.",
-          "Never present an assumption, learned pattern or crop default as a known fact.",
-          "Use ordinary language first. Translate technical results into practical consequences such as more time, more sections, easier access, higher cost or better uniformity.",
-          "Only expose hydraulic jargon, equations, pressure details, permissible-length calculations or product specifications when requested or when a technical limit must be made clear to avoid an invalid design.",
-          "Do not treat 2 HP, single phase, a particular pipe size, emitter type, or budget as a fixed design rule. They are context and trade-off signals.",
-          "Keep affordability, willingness to spend, quality preference, time tolerance, labour tolerance, convenience and future expansion as separate revisable dimensions. Never stereotype a person from sparse information.",
-          "Use only the supplied context for specific product or engineering claims. Distinguish engineering evidence, manufacturer evidence, TAGRO policy and learned observation.",
-          "Geometry proposals must be expressed as design intent anchored to existing entity IDs. Never invent final map/canvas coordinates.",
-          "If a low-cost option trades capital for longer irrigation time, more manual work, more sections or less convenience, explain that plainly and do not present it as viable until required deterministic checks are listed or already passed.",
-          "If evidence is missing, do not fill the gap with presumed information. Ask, offer a cautious starting point, or say not enough is known yet.",
-          "Default response: brief understanding; then one consequential question OR a small number of useful proposals. Do not fill proposals merely because the schema permits them."
-        ].join(" ")
-      },
-      { role: "user", content: JSON.stringify(context) }
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: adviserResponseSchema
+    system: adviserSystemPrompt(),
+    max_tokens: 1600,
+    messages: [{ role: "user", content: JSON.stringify(context) }],
+    output_config: {
+      format: {
+        type: "json_schema",
+        schema: anthropicSchema(adviserResponseSchema)
+      }
     }
   };
 }
 
-function normalizeStructuredResult(result: any) {
-  const response = result?.response ?? result;
-  if (!response || typeof response !== "object" || typeof response.message !== "string") {
-    throw new Error("Workers AI did not return the adviser response contract");
+function parseAnthropicStructuredResult(result: any) {
+  if (result?.response && typeof result.response === "object" && typeof result.response.message === "string") return result.response;
+  if (typeof result?.message === "string") return result;
+  const textBlock = Array.isArray(result?.content)
+    ? result.content.find((block: any) => block?.type === "text" && typeof block?.text === "string")
+    : null;
+  if (!textBlock?.text) throw new Error("Anthropic returned no structured text block");
+  const parsed = JSON.parse(textBlock.text);
+  if (!parsed || typeof parsed !== "object" || typeof parsed.message !== "string") {
+    throw new Error("Anthropic response did not match adviser response contract");
   }
+  return parsed;
+}
+
+function normalizeStructuredResult(result: any) {
+  const response = parseAnthropicStructuredResult(result);
   const proposals = Array.isArray(response.proposals)
     ? response.proposals.map((proposal: any, index: number) => stampProposal(proposal, index))
     : [];
@@ -158,8 +186,9 @@ export default {
 
     if (url.pathname === "/health") {
       const aiBinding = Boolean(env.AI);
-      const aiModel = Boolean(env.AI_MODEL?.trim());
-      const aiReady = aiBinding && aiModel;
+      const model = env.AI_MODEL?.trim() || "";
+      const gateway = env.AI_GATEWAY?.trim() || "default";
+      const aiReady = aiBinding && Boolean(model);
       return json({
         ok: true,
         service: "tagro-irrigation-ai-context",
@@ -167,8 +196,11 @@ export default {
         build: env.BUILD ?? "dev",
         ai_bound: aiReady,
         ai_binding: aiBinding,
-        ai_model_configured: aiModel,
+        ai_model_configured: Boolean(model),
         ai_ready: aiReady,
+        ai_provider: model.startsWith("anthropic/") ? "anthropic" : "configured-model",
+        ai_model: model || null,
+        ai_gateway: gateway,
         structured_output: "ai-adviser-response-v1.0",
         direct_geometry_from_ai: false,
         assets_bound: Boolean(env.ASSETS),
@@ -192,25 +224,39 @@ export default {
       const body = await req.json<ContextRequest>().catch(() => null);
       if (!body) return json({ error: "valid JSON body required" }, 400);
       const context = buildContext(body);
-      if (!env.AI || !env.AI_MODEL?.trim()) {
+      const model = env.AI_MODEL?.trim() || "";
+      const gateway = env.AI_GATEWAY?.trim() || "default";
+      if (!env.AI || !model) {
         return json({
-          error: "AI binding/model not configured",
+          error: "Anthropic adviser not configured",
           context,
-          detail: "Context assembly is operational. Bind Workers AI and configure AI_MODEL to enable adviser responses."
+          detail: "Context assembly is operational. Configure the Cloudflare AI binding/model to enable Anthropic adviser responses."
         }, 501);
       }
       try {
-        const raw = await env.AI.run(env.AI_MODEL, adviserPrompt(context));
+        const raw = await env.AI.run(model, adviserPrompt(context), {
+          gateway: {
+            id: gateway,
+            skipCache: true,
+            collectLog: true,
+            metadata: {
+              application: "tagro-irrigation-environment",
+              environment: env.ENVIRONMENT ?? "staging",
+              task: body.task ?? "irrigation_design_advice"
+            }
+          }
+        });
         const structured = normalizeStructuredResult(raw);
         return json({
           context_version: (context as any).context_version,
           result: structured.message,
           structured,
+          gateway_log_id: env.AI.aiGatewayLogId ?? null,
           proposal_status: "All returned proposals remain proposed until human acceptance and deterministic validation."
         });
       } catch (error: any) {
         return json({
-          error: "structured adviser response failed",
+          error: "Anthropic adviser response failed",
           detail: String(error?.message ?? error),
           context_version: (context as any).context_version
         }, 502);
