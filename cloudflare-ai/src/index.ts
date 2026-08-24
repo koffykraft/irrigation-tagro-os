@@ -8,6 +8,7 @@ import jainJet from "../../knowledge/products/jain/jain-jet.json";
 type Env = {
   ENVIRONMENT?: string;
   BUILD?: string;
+  ASSETS?: Fetcher;
   AI?: { run: (model: string, input: unknown) => Promise<unknown> };
   AI_MODEL?: string;
 };
@@ -61,7 +62,7 @@ function selectProducts(body: ContextRequest) {
 
 function buildContext(body: ContextRequest) {
   return {
-    context_version: "irrigation-context-1.1.0",
+    context_version: "irrigation-context-1.2.0",
     generated_at: new Date().toISOString(),
     task: body.task ?? "irrigation_design_advice",
     user_request: body.user_request ?? null,
@@ -88,6 +89,7 @@ function buildContext(body: ContextRequest) {
       manufacturer_specs_are_not_overridden_by_learning: true,
       tagro_policy_generates_options_but_does_not_force_answers: true,
       geometry_changes_are_proposals_until_human_acceptance: true,
+      learned_patterns_are_observations_not_rules: true,
       unknown_is_not_zero: true,
       explain_tradeoffs: true
     }
@@ -113,7 +115,7 @@ function adviserPrompt(context: unknown) {
           "Generate options, questions and reversible proposals; never claim to have changed accepted geometry.",
           "If a low-cost option trades capital for longer irrigation time, more manual work, more sections or less convenience, explain that plainly and validate it against deterministic hydraulics before presenting it as viable.",
           "If evidence is missing, do not fill the gap with presumed information. Ask, offer a cautious starting point, or say not enough is known yet.",
-          "Default response shape: brief understanding of what the farmer is trying to achieve; then either one next question or at most a few relevant options. Put deeper technical detail behind an explicit request or a 'why' explanation."
+          "Default response shape: brief understanding of what the farmer is trying to achieve; then either one next question or at most a few relevant options. Put deeper technical detail behind an explicit request or a why explanation."
         ].join(" ")
       },
       { role: "user", content: JSON.stringify(context) }
@@ -123,12 +125,35 @@ function adviserPrompt(context: unknown) {
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
-    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type", "access-control-allow-methods": "GET,POST,OPTIONS" } });
+    if (req.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "access-control-allow-origin": "*",
+          "access-control-allow-headers": "content-type",
+          "access-control-allow-methods": "GET,POST,OPTIONS"
+        }
+      });
+    }
+
     const url = new URL(req.url);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "tagro-irrigation-ai-context", environment: env.ENVIRONMENT ?? "staging", build: env.BUILD ?? "dev", ai_bound: Boolean(env.AI), product_seed_count: PRODUCTS.length });
+      const aiBinding = Boolean(env.AI);
+      const aiModel = Boolean(env.AI_MODEL?.trim());
+      return json({
+        ok: true,
+        service: "tagro-irrigation-ai-context",
+        environment: env.ENVIRONMENT ?? "staging",
+        build: env.BUILD ?? "dev",
+        ai_binding: aiBinding,
+        ai_model_configured: aiModel,
+        ai_ready: aiBinding && aiModel,
+        assets_bound: Boolean(env.ASSETS),
+        product_seed_count: PRODUCTS.length
+      });
     }
+
     if (url.pathname === "/api/knowledge/world") return json(worldProfile);
     if (url.pathname === "/api/knowledge/engineering") return json(engineeringBasis);
     if (url.pathname === "/api/knowledge/sources") return json(sourceRegistry);
@@ -144,13 +169,23 @@ export default {
       const body = await req.json<ContextRequest>().catch(() => null);
       if (!body) return json({ error: "valid JSON body required" }, 400);
       const context = buildContext(body);
-      if (!env.AI || !env.AI_MODEL) {
-        return json({ error: "AI binding/model not configured", context, detail: "Context assembly is operational; bind Cloudflare AI and set AI_MODEL to enable adviser responses." }, 501);
+      if (!env.AI || !env.AI_MODEL?.trim()) {
+        return json({
+          error: "AI binding/model not configured",
+          context,
+          detail: "Context assembly is operational. Bind Workers AI and configure AI_MODEL to enable adviser responses."
+        }, 501);
       }
       const result = await env.AI.run(env.AI_MODEL, adviserPrompt(context));
-      return json({ context_version: (context as any).context_version, result, proposal_status: "AI output is advisory until validated/accepted" });
+      return json({
+        context_version: (context as any).context_version,
+        result,
+        proposal_status: "AI output is advisory until validated/accepted"
+      });
     }
 
-    return json({ error: "not found" }, 404);
+    if (url.pathname.startsWith("/api/")) return json({ error: "not found" }, 404);
+    if (env.ASSETS) return env.ASSETS.fetch(req);
+    return json({ error: "static assets binding not configured" }, 503);
   }
 };
