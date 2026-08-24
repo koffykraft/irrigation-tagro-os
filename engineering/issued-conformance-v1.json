@@ -1,0 +1,23 @@
+{
+  "version": "issued-conformance-1.0.0",
+  "purpose": "Golden regression evidence from two issued historical irrigation design jobs. These checks protect fitted permissible-length constants; they do not limit future supported pipe sizes.",
+  "source_jobs": [
+    "SDM/EST/DP/SLN.1029",
+    "SDM/EST/DP/SLN.1064"
+  ],
+  "checks": [
+    {"role":"lateral","nominal_mm":16,"sdr_lph_per_m":11,"expected_permissible_m":50},
+    {"role":"submain","nominal_mm":50,"sdr_lph_per_m":84,"expected_permissible_m":87},
+    {"role":"main","nominal_mm":50,"sdr_lph_per_m":336,"expected_permissible_m":35},
+    {"role":"lateral","nominal_mm":16,"sdr_lph_per_m":2,"expected_permissible_m":151},
+    {"role":"lateral","nominal_mm":16,"sdr_lph_per_m":3,"expected_permissible_m":116},
+    {"role":"lateral","nominal_mm":16,"sdr_lph_per_m":4,"expected_permissible_m":96},
+    {"role":"submain","nominal_mm":63,"sdr_lph_per_m":24,"expected_permissible_m":294},
+    {"role":"submain","nominal_mm":63,"sdr_lph_per_m":25,"expected_permissible_m":286},
+    {"role":"submain","nominal_mm":63,"sdr_lph_per_m":35,"expected_permissible_m":230},
+    {"role":"submain","nominal_mm":63,"sdr_lph_per_m":47,"expected_permissible_m":190},
+    {"role":"submain","nominal_mm":63,"sdr_lph_per_m":69,"expected_permissible_m":148},
+    {"role":"main","nominal_mm":63,"sdr_lph_per_m":56,"expected_permissible_m":169},
+    {"role":"main","nominal_mm":63,"sdr_lph_per_m":120,"expected_permissible_m":103}
+  ]
+}
