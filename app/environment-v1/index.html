@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f2">
+  <title>TAGRO Irrigation Environment</title>
+  <link rel="stylesheet" href="./environment.css">
+</head>
+<body>
+  <main id="app" class="app" data-surface="field">
+    <header class="topbar">
+      <button id="surfaceButton" class="surface-button" type="button" aria-expanded="false">
+        <span id="surfaceLabel">FIELD</span><span aria-hidden="true">⌄</span>
+      </button>
+      <div class="job-context" aria-live="polite">
+        <strong id="jobTitle">New irrigation job</strong>
+        <span id="jobStatus">Preliminary · nothing assumed</span>
+      </div>
+      <button id="workButton" class="work-button" type="button" aria-label="Open work tools" aria-expanded="false">＋</button>
+    </header>
+
+    <nav id="surfaceMenu" class="surface-menu" aria-label="Environment surfaces">
+      <button type="button" data-open-surface="field"><b>FIELD</b><span>Map, reality, plants, water, access</span></button>
+      <button type="button" data-open-surface="drawing"><b>DRAWING</b><span>Same objects, clean engineering view</span></button>
+      <button type="button" data-open-surface="adviser"><b>ADVISER</b><span>Talk, ask, compare, propose</span></button>
+      <button type="button" data-open-surface="design"><b>DESIGN</b><span>Checks, assumptions, operating logic</span></button>
+      <button type="button" data-open-surface="materials"><b>MATERIALS</b><span>Requirements, products, pricing</span></button>
+    </nav>
+
+    <section id="canvasSurface" class="surface canvas-surface is-active" data-surface-panel="field">
+      <div class="canvas-stage field-stage" id="fieldStage">
+        <svg id="fieldCanvas" class="design-canvas" viewBox="0 0 1000 700" role="application" aria-label="Field drawing canvas"></svg>
+        <div class="empty-hint" id="fieldHint">
+          <strong>Start anywhere.</strong>
+          <span>Draw the boundary, mark a well, add plants, lay a pipe — or tell TAGRO what is here.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="surface canvas-surface" data-surface-panel="drawing">
+      <div class="canvas-stage drawing-stage">
+        <svg id="drawingCanvas" class="design-canvas" viewBox="0 0 1000 700" role="application" aria-label="Engineering drawing canvas"></svg>
+        <div class="drawing-note">Same objects as FIELD · no export or recreation</div>
+      </div>
+    </section>
+
+    <section class="surface adviser-surface" data-surface-panel="adviser">
+      <div class="adviser-wrap">
+        <div class="adviser-head">
+          <div>
+            <span class="eyebrow">DESIGN ADVISER</span>
+            <h1>Tell me what you are trying to do.</h1>
+          </div>
+          <span id="aiStatus" class="ai-status">Checking adviser…</span>
+        </div>
+        <div id="conversation" class="conversation" aria-live="polite"></div>
+        <div id="reflection" class="reflection" hidden>
+          <span>WHAT I UNDERSTAND SO FAR</span>
+          <p id="reflectionText"></p>
+          <button id="correctReflection" type="button">That is not what I meant</button>
+        </div>
+        <div id="quickReplies" class="quick-replies"></div>
+        <form id="adviserForm" class="adviser-compose">
+          <label class="sr-only" for="adviserInput">Talk to TAGRO</label>
+          <textarea id="adviserInput" rows="1" placeholder="Describe the field, ask a question, or say what you want…"></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="surface review-surface" data-surface-panel="design">
+      <div class="review-wrap">
+        <header class="review-head">
+          <span class="eyebrow">DESIGN</span>
+          <h1>What the design knows — and what it does not.</h1>
+          <p>No hydraulic PASS/FAIL is invented from missing data.</p>
+        </header>
+        <div class="review-grid">
+          <article class="review-card">
+            <h2>Network now</h2>
+            <div id="networkSummary" class="big-summary"></div>
+          </article>
+          <article class="review-card">
+            <h2>Engineering status</h2>
+            <div id="engineeringStatus"></div>
+          </article>
+          <article class="review-card wide">
+            <h2>Open design questions</h2>
+            <div id="designUnknowns"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="surface review-surface" data-surface-panel="materials">
+      <div class="review-wrap">
+        <header class="review-head">
+          <span class="eyebrow">MATERIALS</span>
+          <h1>Requirements first. Products second.</h1>
+          <p>Jain and generic alternatives resolve against the accepted design; product knowledge does not decide the design by itself.</p>
+        </header>
+        <div id="materialsList" class="materials-list"></div>
+        <article class="product-knowledge-card">
+          <div>
+            <span class="eyebrow">PRODUCT INTELLIGENCE</span>
+            <h2>Compare only when it matters.</h2>
+            <p id="productKnowledgeText">Select or describe an application need before product advice is offered.</p>
+          </div>
+          <button id="openAdviserFromMaterials" type="button">Ask about products</button>
+        </article>
+      </div>
+    </section>
+
+    <aside id="workMenu" class="work-menu" aria-label="Work tools">
+      <div class="work-menu-head"><b id="workMenuTitle">Work on field</b><button id="closeWorkMenu" type="button" aria-label="Close">×</button></div>
+      <div id="fieldTools" class="tool-grid">
+        <button type="button" data-tool="select"><span class="tool-symbol select-symbol">↖</span><b>Select</b></button>
+        <button type="button" data-tool="boundary"><span class="tool-symbol boundary-symbol">⬡</span><b>Boundary</b></button>
+        <button type="button" data-tool="main"><span class="tool-symbol main-symbol">━</span><b>Main</b></button>
+        <button type="button" data-tool="submain"><span class="tool-symbol submain-symbol">━</span><b>Submain</b></button>
+        <button type="button" data-tool="lateral"><span class="tool-symbol lateral-symbol">━</span><b>Lateral</b></button>
+        <button type="button" data-tool="plant"><span class="tool-symbol plant-symbol">●</span><b>Plant</b></button>
+        <button type="button" data-tool="water_source"><span class="tool-symbol water-symbol">◉</span><b>Water</b></button>
+        <button type="button" data-tool="path"><span class="tool-symbol path-symbol">╱</span><b>Path</b></button>
+      </div>
+      <div class="work-actions">
+        <button id="finishDraft" type="button" hidden>Finish shape</button>
+        <button id="openDrawingAction" type="button">Open Drawing</button>
+        <button id="tellStoryAction" type="button">Tell field story</button>
+      </div>
+    </aside>
+
+    <aside id="selectionCard" class="selection-card" hidden>
+      <div class="selection-line">
+        <div><b id="selectionName">Object</b><span id="selectionState"></span></div>
+        <button id="clearSelection" type="button" aria-label="Close selection">×</button>
+      </div>
+      <div id="selectionActions" class="selection-actions"></div>
+    </aside>
+
+    <div id="activeToolChip" class="active-tool-chip" hidden>
+      <b id="activeToolName">Main</b><span id="activeToolHint">Tap start, then end</span><button id="cancelTool" type="button">Cancel</button>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script src="./environment.js"></script>
+</body>
+</html>
