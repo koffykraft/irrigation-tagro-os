@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tagro.in/schemas/farmer-design-context.schema.json",
+  "title": "Farmer Design Context",
+  "description": "Revisable, job-specific context for irrigation design. This is not a permanent personality profile and must not be inferred from identity, appearance, location or wealth signals.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "stated_need": {"type": ["string", "null"]},
+    "stated_budget": {"type": ["number", "null"], "minimum": 0},
+    "budget_flexibility": {"enum": ["unknown", "firm", "some", "flexible"]},
+    "quality_preference": {"enum": ["unknown", "minimum_workable", "balanced", "quality_first"]},
+    "willingness_to_spend": {"enum": ["unknown", "low", "moderate", "high"]},
+    "affordability": {"enum": ["unknown", "constrained", "comfortable"]},
+    "time_tolerance": {"enum": ["unknown", "low", "moderate", "high"]},
+    "manual_work_tolerance": {"enum": ["unknown", "low", "moderate", "high"]},
+    "convenience_priority": {"enum": ["unknown", "low", "moderate", "high"]},
+    "future_expansion_interest": {"enum": ["unknown", "none", "possible", "likely"]},
+    "wants_explanation_depth": {"enum": ["unknown", "simple", "normal", "deep"]},
+    "notes_in_farmer_words": {
+      "type": "array",
+      "items": {"type": "string"},
+      "maxItems": 30
+    },
+    "confirmed_at": {"type": ["string", "null"], "format": "date-time"}
+  }
+}
