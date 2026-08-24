@@ -21,12 +21,24 @@
   <p class="muted">Staging only. Tests the deployed Worker from the same browser origin.</p>
   <button id="runAll" class="primary">Run all checks</button>
   <div class="grid">
-    <section class="card"><div class="row"><b>1. Health / Anthropic binding</b><span id="healthStatus" class="status pending">Not run</span></div><pre id="healthOut"></pre></section>
+    <section class="card"><div class="row"><b>1. Health / binding configuration</b><span id="healthStatus" class="status pending">Not run</span></div><pre id="healthOut"></pre></section>
     <section class="card"><div class="row"><b>2. Engineering conformance</b><span id="engStatus" class="status pending">Not run</span></div><pre id="engOut"></pre></section>
     <section class="card"><div class="row"><b>3. Product knowledge</b><span id="prodStatus" class="status pending">Not run</span></div><pre id="prodOut"></pre></section>
     <section class="card">
-      <div class="row"><b>4. Conversational Anthropic adviser</b><span id="aiStatus" class="status pending">Not run</span></div>
-      <p class="muted">This prompt deliberately gives too little information. A good result should understand first and ask a consequential question rather than inventing a full system.</p>
+      <div class="row"><b>4A. Bare Anthropic provider call</b><span id="providerStatus" class="status pending">Not run</span></div>
+      <p class="muted">Uses Cloudflare's documented Sonnet request shape only. No TAGRO context, schema, or response parser.</p>
+      <button id="runProvider" class="secondary">Run provider only</button>
+      <pre id="providerOut"></pre>
+    </section>
+    <section class="card">
+      <div class="row"><b>4B. Anthropic JSON response</b><span id="jsonStatus" class="status pending">Not run</span></div>
+      <p class="muted">Checks whether Claude can return and the Worker can parse a tiny JSON object before the full adviser contract is attempted.</p>
+      <button id="runJson" class="secondary">Run JSON only</button>
+      <pre id="jsonOut"></pre>
+    </section>
+    <section class="card">
+      <div class="row"><b>4C. Conversational TAGRO adviser</b><span id="aiStatus" class="status pending">Not run</span></div>
+      <p class="muted">This deliberately gives too little information. A good result should understand first and ask a consequential question rather than inventing a full system.</p>
       <textarea id="prompt">I have a small mixed backyard with coconut, pepper, banana and a vegetable patch. I want irrigation but I don't yet know what I should spend.</textarea>
       <button id="runAi" class="secondary">Run adviser only</button>
       <pre id="aiOut"></pre>
@@ -39,14 +51,17 @@
 const $=s=>document.querySelector(s);
 const pretty=v=>JSON.stringify(v,null,2);
 function setStatus(id,ok,text){const e=$(id);e.textContent=text;e.className='status '+(ok?'pass':'fail')}
-async function getJson(url){const r=await fetch(url,{cache:'no-store'});const data=await r.json();if(!r.ok)throw new Error(pretty(data));return data}
-async function postJson(url,body){const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw new Error(pretty(data));return data}
-async function runHealth(){try{const d=await getJson('/health');$('#healthOut').textContent=pretty(d);setStatus('#healthStatus',d.ok&&d.ai_ready,'PASS')}catch(e){$('#healthOut').textContent=String(e);setStatus('#healthStatus',false,'FAIL')}}
+async function requestJson(url,options={}){const r=await fetch(url,{cache:'no-store',...options});let data;try{data=await r.json()}catch(e){data={http_status:r.status,parse_error:String(e)}}return {ok:r.ok,status:r.status,data}}
+async function getJson(url){const x=await requestJson(url);if(!x.ok)throw new Error(pretty(x.data));return x.data}
+async function postJson(url,body){const x=await requestJson(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});if(!x.ok)throw new Error(pretty(x.data));return x.data}
+async function runHealth(){try{const d=await getJson('/health');$('#healthOut').textContent=pretty(d);setStatus('#healthStatus',d.ok&&d.ai_binding&&d.ai_model_configured,'PASS')}catch(e){$('#healthOut').textContent=String(e);setStatus('#healthStatus',false,'FAIL')}}
 async function runEng(){try{const d=await getJson('/api/engineering/conformance');$('#engOut').textContent=pretty(d);setStatus('#engStatus',d.pass&&d.checks===13,'PASS')}catch(e){$('#engOut').textContent=String(e);setStatus('#engStatus',false,'FAIL')}}
 async function runProducts(){try{const d=await getJson('/api/knowledge/products');$('#prodOut').textContent=pretty({count:d.count,index:(d.index||[]).slice(0,20)});setStatus('#prodStatus',d.count>=13,'PASS')}catch(e){$('#prodOut').textContent=String(e);setStatus('#prodStatus',false,'FAIL')}}
+async function runProvider(){try{const d=await getJson('/api/ai/provider-ping');$('#providerOut').textContent=pretty(d);setStatus('#providerStatus',d.ok&&String(d.text||'').trim().toUpperCase().includes('OK'),'PASS')}catch(e){$('#providerOut').textContent=String(e);setStatus('#providerStatus',false,'FAIL')}}
+async function runJson(){try{const d=await getJson('/api/ai/json-ping');$('#jsonOut').textContent=pretty(d);setStatus('#jsonStatus',d.ok&&d.parsed&&d.parsed.message==='OK','PASS')}catch(e){$('#jsonOut').textContent=String(e);setStatus('#jsonStatus',false,'FAIL')}}
 async function runAi(){try{const d=await postJson('/api/ai/advise',{task:'irrigation_design_advice',user_request:$('#prompt').value,farmer:{stated_need:$('#prompt').value,wants_explanation_depth:'simple'},field:{description:'small mixed backyard'},product_query:{generic_allowed:true}});$('#aiOut').textContent=pretty(d);const s=d.structured||{};const conversational=typeof s.message==='string'&&s.message.length>0;const oneQuestion=s.next_question==null||typeof s.next_question==='string';setStatus('#aiStatus',conversational&&oneQuestion,'PASS')}catch(e){$('#aiOut').textContent=String(e);setStatus('#aiStatus',false,'FAIL')}}
 function runLearning(){try{const job=TAGROLearning.ensureJobId();TAGROLearning.clear(job);TAGROLearning.recordPreference(job,'Keep daily controls somewhere easy to reach from the path.',['PATH1']);TAGROLearning.recordProposalDecision(job,{proposal_id:'smoke_prop_1',affected_ids:['S1']},'rejected','Too much pipe for what I need now.');const c=TAGROLearning.context(job);$('#learnOut').textContent=pretty(c);setStatus('#learnStatus',c.entries.length===2&&!c.entries.some(e=>e.may_generalize),'PASS')}catch(e){$('#learnOut').textContent=String(e);setStatus('#learnStatus',false,'FAIL')}}
-$('#runAi').addEventListener('click',runAi);$('#runAll').addEventListener('click',async()=>{await runHealth();await runEng();await runProducts();await runAi();runLearning()});
+$('#runProvider').addEventListener('click',runProvider);$('#runJson').addEventListener('click',runJson);$('#runAi').addEventListener('click',runAi);$('#runAll').addEventListener('click',async()=>{await runHealth();await runEng();await runProducts();await runProvider();await runJson();await runAi();runLearning()});
 </script>
 </body>
 </html>
