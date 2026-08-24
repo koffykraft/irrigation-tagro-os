@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "status": "inventory_in_progress",
+  "source_of_record": "Dropbox",
+  "sources": [
+    {
+      "id": "ntb_design_instructions",
+      "path": "/Irrigation/IRRIGATION 2/DESIGNING DATA/instructions .txt",
+      "kind": "engineering_method",
+      "verified_read": true,
+      "notes": "2 kg example; 20% sub-unit head-loss allowance; 55% lateral / 45% submain allocation; slope and telescoping instructions."
+    },
+    {
+      "id": "lateral_16mm_limits",
+      "path": "/Irrigation/IRRIGATION 2/DESIGNING DATA/LIMITING LENGTHS FOR 16MM LATERALS.doc",
+      "kind": "engineering_table",
+      "verified_read": true,
+      "notes": "Permissible 16 mm lateral lengths by SDR and operating pressure; table requires validation for apparent transcription anomalies before machine authority."
+    },
+    {
+      "id": "pipe_designer_xls",
+      "path": "/Irrigation/IRRIGATION 2/DESIGNING DATA/lateral , submain, mains & telescoping mains designer.xls",
+      "kind": "engineering_calculator",
+      "verified_read": false,
+      "notes": "Present in Dropbox; requires structured extraction/validation."
+    },
+    {
+      "id": "pump_hp_reckoner",
+      "path": "/Irrigation/IRRIGATION 2/DESIGNING DATA/PUMP HP RECKONER.doc",
+      "kind": "engineering_method",
+      "verified_read": true,
+      "notes": "HP relation and head components including filter, fittings, venturi, valves, lateral and elevation."
+    },
+    {
+      "id": "bowsmith_design_aids",
+      "path": "/Irrigation/bowsmith_designaids_complete.pdf",
+      "kind": "product_engineering_reference",
+      "verified_read": false,
+      "notes": "Large PDF; inventory confirmed, full extraction pending."
+    },
+    {
+      "id": "fanjet_metric",
+      "path": "/Irrigation/IRRIGATION 2/DESIGNING DATA/FANJET Metric.htm",
+      "kind": "application_device_reference",
+      "verified_read": false,
+      "notes": "Fan-jet performance source present; extraction pending."
+    },
+    {
+      "id": "jain_drip_manifest",
+      "path": "/jain-irrigation-agent/Product Files_JAIN/jain_drip/manifest.csv",
+      "kind": "manufacturer_catalogue_manifest",
+      "verified_read": true,
+      "notes": "Contains Jain tubes, emitters, filters and accessories with manufacturer page/PDF provenance."
+    },
+    {
+      "id": "jain_micro_mini_manifest",
+      "path": "/jain-irrigation-agent/Product Files_JAIN/jain_micro_mini_sprinklers/manifest.csv",
+      "kind": "manufacturer_catalogue_manifest",
+      "verified_read": true,
+      "notes": "Contains mini/micro sprinklers, under-tree systems, jets, misters, foggers, bubblers and accessories."
+    },
+    {
+      "id": "jain_legacy_folder",
+      "path": "/Jain",
+      "kind": "historical_product_price_scheme_material",
+      "verified_read": false,
+      "notes": "Includes old Jain valve/pipe price lists, Kerala subsidy material, venturi literature, product pictures and farm-visit material. Must retain dates and never treat old prices as current."
+    },
+    {
+      "id": "tagro_automation",
+      "path": "/TAGRO_AUTOMATION",
+      "kind": "tagro_operational_context",
+      "verified_read": false,
+      "notes": "Use selectively for shared product, price, branch, intelligence and system integration context; do not indiscriminately ingest unrelated finance/private operational records into irrigation AI."
+    }
+  ]
+}
