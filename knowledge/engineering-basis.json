@@ -1,0 +1,54 @@
+{
+  "version": "1.0.0",
+  "status": "seed_verified_plus_policy",
+  "verified_rules": [
+    {
+      "id": "subunit_headloss_split_2kg_example",
+      "source": "/Irrigation/IRRIGATION 2/DESIGNING DATA/instructions .txt",
+      "operating_pressure_kg_cm2_example": 2.0,
+      "operating_head_m_example": 20.0,
+      "allowable_subunit_headloss_fraction": 0.20,
+      "allowable_subunit_headloss_m_example": 4.0,
+      "lateral_share_fraction": 0.55,
+      "lateral_allowable_headloss_m_example": 2.2,
+      "submain_share_fraction": 0.45,
+      "submain_allowable_headloss_m_example": 1.8,
+      "scope": "flat surface and single-size submain in the cited example; slope/telescoping handled separately",
+      "authority": "source_derived"
+    },
+    {
+      "id": "slope_telescoping_method",
+      "source": "/Irrigation/IRRIGATION 2/DESIGNING DATA/instructions .txt",
+      "description": "Use slope-specific chart and combine head loss across telescoped pipe sections; adjust section lengths to meet target head condition.",
+      "authority": "source_derived"
+    },
+    {
+      "id": "pump_head_components",
+      "source": "/Irrigation/IRRIGATION 2/DESIGNING DATA/PUMP HP RECKONER.doc",
+      "components": ["suction_head", "delivery_head", "filter_loss", "fittings_loss", "venturi_loss", "valves", "lateral_loss", "elevation"],
+      "example_allowances_m": {"filter": 2.0, "fittings": 2.0, "venturi": 10.0},
+      "motor_efficiency_example": 0.70,
+      "diesel_efficiency_example": 0.60,
+      "authority": "source_derived"
+    }
+  ],
+  "tagro_design_policy": {
+    "consider_laminar_flow": true,
+    "consider_transitional_and_turbulent_flow": true,
+    "prefer_low_energy_low_head_solution_when_valid": true,
+    "prefer_single_phase_and_at_or_below_2hp_when_practical": true,
+    "small_field_bias": true,
+    "cost_efficiency_bias": true,
+    "kerala_context_bias": true,
+    "human_access_bias": true,
+    "fan_jets_and_under_tree_application_are_first_class_options": true,
+    "policy_authority": "TAGRO_operational_preference_not_universal_engineering_rule"
+  },
+  "safety_and_truth": {
+    "old_tables_require_provenance_and_validation": true,
+    "apparent_table_anomalies_must_not_be_silently_corrected": true,
+    "manufacturer_ranges_override_learned_preferences": true,
+    "deterministic_calculations_override_ai_guessing": true,
+    "ai_may_propose_but_not_accept_geometry_or_engineering_changes": true
+  }
+}
