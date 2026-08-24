@@ -1,4 +1,5 @@
 import core from "./index";
+import { handleAnonymousJobs } from "./anonymous-jobs";
 
 type AiLike = {
   run: (model: string, input: any, options?: Record<string, any>) => Promise<any>;
@@ -10,7 +11,10 @@ function json(data: unknown, status = 200) {
     status,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
+      "cache-control": "no-store",
+      "access-control-allow-origin": "*",
+      "access-control-allow-headers": "content-type,authorization,x-job-token",
+      "access-control-allow-methods": "GET,POST,PUT,OPTIONS"
     }
   });
 }
@@ -171,13 +175,33 @@ async function jsonPing(env: any) {
   }
 }
 
+async function healthWithPersistence(request: Request, env: any, adaptedEnv: any) {
+  const response = await core.fetch(request, adaptedEnv);
+  try {
+    const data = await response.clone().json<any>();
+    return json({
+      ...data,
+      anonymous_persistence: "d1-job-token-v1",
+      anonymous_persistence_bound: Boolean(env?.IRRIGATION_DB),
+      user_accounts_required: false
+    }, response.status);
+  } catch {
+    return response;
+  }
+}
+
 export default {
   async fetch(request: Request, env: any): Promise<Response> {
     const url = new URL(request.url);
+    const adaptedEnv = env?.AI ? { ...env, AI: adaptAnthropicAi(env.AI) } : env;
+
+    if (url.pathname === "/health") return healthWithPersistence(request, env, adaptedEnv);
     if (url.pathname === "/api/ai/provider-ping") return providerPing(env);
     if (url.pathname === "/api/ai/json-ping") return jsonPing(env);
 
-    const adaptedEnv = env?.AI ? { ...env, AI: adaptAnthropicAi(env.AI) } : env;
+    const jobResponse = await handleAnonymousJobs(request, env);
+    if (jobResponse) return jobResponse;
+
     return core.fetch(request, adaptedEnv);
   }
 };
