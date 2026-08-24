@@ -5,6 +5,17 @@ type AiLike = {
   aiGatewayLogId?: string;
 };
 
+function cleanJsonText(text: string) {
+  let value = String(text || "").trim();
+  if (value.startsWith("```")) {
+    value = value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  }
+  const first = value.indexOf("{");
+  const last = value.lastIndexOf("}");
+  if (first >= 0 && last > first) value = value.slice(first, last + 1);
+  return value;
+}
+
 function adaptAnthropicAi(ai: AiLike): AiLike {
   return {
     async run(model: string, input: any, options?: Record<string, any>) {
@@ -36,7 +47,16 @@ function adaptAnthropicAi(ai: AiLike): AiLike {
           }
         : options;
 
-      return ai.run(model, nextInput, nextOptions);
+      const result = await ai.run(model, nextInput, nextOptions);
+      if (schema && Array.isArray(result?.content)) {
+        const content = result.content.map((block: any) =>
+          block?.type === "text" && typeof block?.text === "string"
+            ? { ...block, text: cleanJsonText(block.text) }
+            : block
+        );
+        return { ...result, content };
+      }
+      return result;
     },
     get aiGatewayLogId() {
       return ai.aiGatewayLogId;
