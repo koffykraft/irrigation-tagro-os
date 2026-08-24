@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#ffffff">
+  <title>TAGRO Irrigation · Field Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css">
+  <link rel="stylesheet" href="./field-map.css">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="back" href="./index.html" aria-label="Back to Irrigation Environment">←</a>
+    <div class="title"><b>FIELD</b><span>Real map · canonical geometry · same job</span></div>
+    <div class="controls">
+      <div class="search"><input id="searchInput" placeholder="Search place or lat,lng"><button id="searchButton" type="button">⌕</button></div>
+      <button id="locateButton" class="locate" type="button" aria-label="Use current location">◎</button>
+      <button id="workButton" class="work" type="button" aria-label="Open field tools">＋</button>
+    </div>
+  </header>
+  <main class="mapwrap">
+    <div id="map" class="map"></div>
+
+    <aside id="workMenu" class="workmenu" aria-label="Field work tools">
+      <div class="workhead"><b>Work on field</b><button id="closeWork" type="button">×</button></div>
+      <div class="tools" id="tools">
+        <button type="button" data-kind="select"><span class="tool-symbol">↖</span>Select</button>
+        <button type="button" data-kind="boundary"><span class="tool-symbol">⬡</span>Boundary</button>
+        <button type="button" data-kind="main"><span class="tool-symbol">━</span>Main</button>
+        <button type="button" data-kind="submain"><span class="tool-symbol">━</span>Submain</button>
+        <button type="button" data-kind="lateral"><span class="tool-symbol">━</span>Lateral</button>
+        <button type="button" data-kind="plant"><span class="tool-symbol">●</span>Plant</button>
+        <button type="button" data-kind="water_source"><span class="tool-symbol">◉</span>Water</button>
+        <button type="button" data-kind="path"><span class="tool-symbol">╱</span>Path</button>
+        <button type="button" data-kind="device"><span class="tool-symbol">⊙</span>Device</button>
+      </div>
+      <div class="footactions">
+        <a href="./spatial-drawing.html">Open Drawing</a>
+        <a href="./index.html">Adviser</a>
+      </div>
+    </aside>
+
+    <div id="status" class="status">Blank field · nothing assumed</div>
+
+    <aside id="selection" class="selection" aria-live="polite">
+      <div class="selhead">
+        <div><b id="selectionName">Object</b><span id="selectionKind"></span></div>
+        <button id="closeSelection" type="button">×</button>
+      </div>
+      <div id="measure" class="measure"></div>
+      <div class="selactions">
+        <button id="editSelected" class="primary" type="button">Edit</button>
+        <button id="duplicateSelected" type="button">Duplicate</button>
+        <button id="deleteSelected" class="danger" type="button">Delete</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.js"></script>
+<script src="./environment-learning.js"></script>
+<script src="./spatial-store.js"></script>
+<script src="./field-map.js"></script>
+</body>
+</html>
