@@ -5,6 +5,7 @@ import adviserResponseSchema from "../../schemas/ai-adviser-response-v1.0.schema
 import jscpc from "../../knowledge/products/jain/j-sc-pc-plus.json";
 import jloc from "../../knowledge/products/jain/j-loc.json";
 import jainJet from "../../knowledge/products/jain/jain-jet.json";
+import { stampProposal } from "./intent-guard";
 
 type Env = {
   ENVIRONMENT?: string;
@@ -135,11 +136,7 @@ function normalizeStructuredResult(result: any) {
     throw new Error("Workers AI did not return the adviser response contract");
   }
   const proposals = Array.isArray(response.proposals)
-    ? response.proposals.map((proposal: any, index: number) => ({
-        id: crypto.randomUUID ? crypto.randomUUID() : `prop_${Date.now()}_${index + 1}`,
-        status: "proposed",
-        ...proposal
-      }))
+    ? response.proposals.map((proposal: any, index: number) => stampProposal(proposal, index))
     : [];
   return { ...response, proposals };
 }
@@ -173,6 +170,7 @@ export default {
         ai_model_configured: aiModel,
         ai_ready: aiReady,
         structured_output: "ai-adviser-response-v1.0",
+        direct_geometry_from_ai: false,
         assets_bound: Boolean(env.ASSETS),
         product_seed_count: PRODUCTS.length
       });
