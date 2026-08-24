@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tagro.in/schemas/irrigation-environment-state-v1.0.schema.json",
+  "title": "TAGRO Irrigation Environment State v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["environment_id", "surface", "maturity", "objects", "relationships", "evidence", "conversation", "proposals", "events"],
+  "properties": {
+    "environment_id": {"type": "string", "minLength": 1},
+    "job_id": {"type": ["string", "null"]},
+    "surface": {"enum": ["field", "drawing", "adviser", "design", "materials"]},
+    "maturity": {"enum": ["indication", "preliminary", "design_checked", "proposed", "accepted", "installed"]},
+    "active_task": {"type": ["string", "null"]},
+    "farmer_context_ref": {"type": ["string", "null"]},
+    "objects": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/object"}
+    },
+    "relationships": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/relationship"}
+    },
+    "evidence": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "conversation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["messages", "current_understanding", "next_question"],
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "role", "text", "at"],
+            "properties": {
+              "id": {"type": "string"},
+              "role": {"enum": ["farmer", "designer", "adviser", "system"]},
+              "text": {"type": "string"},
+              "at": {"type": "string", "format": "date-time"},
+              "evidence_ids": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        },
+        "current_understanding": {"type": ["string", "null"]},
+        "next_question": {"type": ["string", "null"]},
+        "question_reason": {"type": ["string", "null"]},
+        "depth": {"enum": ["sub_minimum", "minimum", "adequate", "stretch", "maximum"]}
+      }
+    },
+    "proposals": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/proposal"}
+    },
+    "design_state": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Projection of deterministic design/hydraulic results. Values must carry their own provenance/version in the producing engine contract."
+    },
+    "materials_state": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Projection of BOM requirements and product resolution. Product/price truth remains in authoritative product/catalogue sources."
+    },
+    "events": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/event"}
+    }
+  },
+  "$defs": {
+    "point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": {
+        "x": {"type": "number"},
+        "y": {"type": "number"},
+        "lat": {"type": ["number", "null"], "minimum": -90, "maximum": 90},
+        "lng": {"type": ["number", "null"], "minimum": -180, "maximum": 180}
+      }
+    },
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "state", "geometry", "properties", "evidence_ids"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["boundary", "plant", "crop_group", "water_source", "tank", "pump", "path", "gate", "building", "obstacle", "main", "submain", "lateral", "valve", "filter", "venturi", "device", "note"]},
+        "state": {"enum": ["observed", "measured", "described", "inferred", "confirmed", "proposed", "accepted", "installed", "superseded"]},
+        "geometry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "points"],
+          "properties": {
+            "type": {"enum": ["point", "line", "polygon"]},
+            "points": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/point"}}
+          }
+        },
+        "properties": {"type": "object", "additionalProperties": true},
+        "evidence_ids": {"type": "array", "items": {"type": "string"}},
+        "created_at": {"type": ["string", "null"], "format": "date-time"},
+        "updated_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "from", "type", "to", "state"],
+      "properties": {
+        "id": {"type": "string"},
+        "from": {"type": "string"},
+        "type": {"enum": ["belongs_to", "located_in", "connects_to", "supplies", "depends_on", "derived_from", "evidenced_by", "supersedes", "affects", "constrains", "near", "preferred_near", "keep_clear_of", "intercropped_with"]},
+        "to": {"type": "string"},
+        "state": {"enum": ["inferred", "confirmed", "proposed", "accepted", "installed"]},
+        "evidence_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "source", "capture", "value", "at"],
+      "properties": {
+        "id": {"type": "string"},
+        "status": {"enum": ["observed", "measured", "described", "inferred", "confirmed"]},
+        "source": {"type": "string"},
+        "capture": {"enum": ["speak", "type", "photo", "map", "draw", "measure", "choose", "import", "engine", "manufacturer", "learned_observation"]},
+        "value": {},
+        "object_ids": {"type": "array", "items": {"type": "string"}},
+        "at": {"type": "string", "format": "date-time"},
+        "provenance": {"type": ["string", "null"]}
+      }
+    },
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "status", "summary", "affected_ids", "assumptions", "unknowns", "checks_required"],
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {"enum": ["question", "geometry", "design", "product", "operating_plan", "human_access", "budget_tradeoff", "future_expansion"]},
+        "status": {"enum": ["proposed", "accepted", "modified", "rejected", "superseded"]},
+        "summary": {"type": "string"},
+        "affected_ids": {"type": "array", "items": {"type": "string"}},
+        "reasoning": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "engineering": {"type": "array", "items": {"type": "string"}},
+            "manufacturer": {"type": "array", "items": {"type": "string"}},
+            "tagro_policy": {"type": "array", "items": {"type": "string"}},
+            "learned_observation": {"type": "array", "items": {"type": "string"}},
+            "human": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "assumptions": {"type": "array", "items": {"type": "string"}},
+        "unknowns": {"type": "array", "items": {"type": "string"}},
+        "checks_required": {"type": "array", "items": {"type": "string"}},
+        "geometry_patch": {"type": ["object", "null"], "additionalProperties": true},
+        "design_patch": {"type": ["object", "null"], "additionalProperties": true},
+        "consequences": {"type": "object", "additionalProperties": true},
+        "source_refs": {"type": "array", "items": {"type": "string"}},
+        "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "at"],
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"type": "string"},
+        "at": {"type": "string", "format": "date-time"},
+        "actor": {"type": ["string", "null"]},
+        "object_ids": {"type": "array", "items": {"type": "string"}},
+        "payload": {"type": "object", "additionalProperties": true}
+      }
+    }
+  }
+}
