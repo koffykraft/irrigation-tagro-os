@@ -45,8 +45,8 @@ function adaptAnthropicAi(ai: AiLike): AiLike {
 }
 
 export default {
-  async fetch(request: Request, env: any, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: any): Promise<Response> {
     const adaptedEnv = env?.AI ? { ...env, AI: adaptAnthropicAi(env.AI) } : env;
-    return core.fetch(request, adaptedEnv, ctx as any);
+    return core.fetch(request, adaptedEnv);
   }
 };
