@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#ffffff">
+  <title>TAGRO Irrigation · Drawing</title>
+  <link rel="stylesheet" href="./spatial-drawing.css">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="back" href="./field-map.html" aria-label="Back to field map">←</a>
+    <div class="title"><b>DRAWING</b><span>Same canonical field objects · engineering projection</span></div>
+    <div class="controls">
+      <a href="./field-map.html">FIELD</a>
+      <button id="fitButton" type="button">Fit</button>
+      <button id="workButton" class="work" type="button">＋</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <svg id="canvas" class="canvas" viewBox="0 0 1000 700" role="application" aria-label="Irrigation drawing"></svg>
+    <div id="empty" class="empty"><div><b>No real field geometry yet.</b><span>Open FIELD and mark at least one real location or boundary. DRAWING will then use the same canonical coordinates rather than inventing a scale.</span></div></div>
+
+    <aside id="workMenu" class="workmenu">
+      <div class="workhead"><b>Work on drawing</b><button id="closeWork" type="button">×</button></div>
+      <div id="tools" class="tools">
+        <button type="button" data-kind="select"><span class="tool-symbol">↖</span>Select</button>
+        <button type="button" data-kind="boundary"><span class="tool-symbol">⬡</span>Boundary</button>
+        <button type="button" data-kind="main"><span class="tool-symbol">━</span>Main</button>
+        <button type="button" data-kind="submain"><span class="tool-symbol">━</span>Submain</button>
+        <button type="button" data-kind="lateral"><span class="tool-symbol">━</span>Lateral</button>
+        <button type="button" data-kind="plant"><span class="tool-symbol">●</span>Plant</button>
+        <button type="button" data-kind="water_source"><span class="tool-symbol">◉</span>Water</button>
+        <button type="button" data-kind="path"><span class="tool-symbol">╱</span>Path</button>
+        <button type="button" data-kind="device"><span class="tool-symbol">⊙</span>Device</button>
+      </div>
+      <button id="finishBoundary" class="finish" type="button">Finish boundary</button>
+    </aside>
+
+    <aside id="selection" class="selection">
+      <div class="selhead"><div><b id="selectionName">Object</b><span id="selectionState"></span></div><button id="closeSelection" type="button">×</button></div>
+      <div id="measure" class="measure"></div>
+      <div class="selactions">
+        <button id="editSelected" class="primary" type="button">Edit points</button>
+        <button id="duplicateSelected" type="button">Duplicate</button>
+        <button id="deleteSelected" class="danger" type="button">Delete</button>
+      </div>
+    </aside>
+
+    <div id="status" class="status">Waiting for real field geometry</div>
+  </main>
+</div>
+
+<script src="./environment-learning.js"></script>
+<script src="./spatial-store.js"></script>
+<script src="./spatial-drawing.js"></script>
+</body>
+</html>
