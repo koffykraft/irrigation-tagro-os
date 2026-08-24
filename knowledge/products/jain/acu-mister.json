@@ -1,0 +1,16 @@
+{
+  "knowledge_version":"jain-product-1.0.0",
+  "manufacturer":"Jain Irrigation Systems Ltd.",
+  "name":"Acu-Mister",
+  "category":"mister",
+  "evidence_state":"manufacturer_document",
+  "source":{"path":"/jain-irrigation-agent/Product Files_JAIN/jain_micro_mini_sprinklers/Misters/Acu Mister.pdf","dropbox_server_modified":"2026-08-02T05:46:11Z","document_scope":"product technical literature"},
+  "hydraulic":{"recommended_pressure_kg_cm2":{"min":0.7,"max":2.5},"flow_range_lph":{"min":14.4,"max":116.8},"wetted_diameter_m":{"min":1.5,"max":2.9},"nozzle_reference_at_1kg_cm2":[{"colour":"black","diameter_mm":0.69,"flow_lph":16.9},{"colour":"blue","diameter_mm":1.0,"flow_lph":32.7},{"colour":"violet","diameter_mm":1.14,"flow_lph":46.7},{"colour":"yellow","diameter_mm":1.32,"flow_lph":60.5},{"colour":"red","diameter_mm":1.47,"flow_lph":70.9}]},
+  "filtration":{"required_micron":100},
+  "connection":"10-24 buttress triple-lead fast-thread inlet",
+  "options":{"leakage_prevention_device_for_pulsed_operation":true},
+  "application":{"manufacturer_examples":["plant_propagation","greenhouse_climate_control","shade_house_climate_control"],"useful_when_considering":["misting/coverage rather than point-source root irrigation","propagation or protected cultivation","pulsed operation with optional leakage-prevention device"]},
+  "design_adviser_hooks":{"do_not_assume":["that mister and fogger are interchangeable","that climate-control demand equals plant irrigation demand","that catalogue wetted diameter remains unchanged under installation/wind conditions"],"ask_or_compare":["purpose: propagation, cooling/humidity or irrigation","mounting/location","available pressure","required flow and pulse behaviour","filtration","fogger alternative"]},
+  "generic_comparison_tags":["mister","propagation","greenhouse","shade_house","climate_control"],
+  "image":{"status":"pending_asset_extraction","source_document_available":true}
+}
