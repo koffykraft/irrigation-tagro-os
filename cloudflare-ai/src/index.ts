@@ -6,6 +6,14 @@ import jscpc from "../../knowledge/products/jain/j-sc-pc-plus.json";
 import jloc from "../../knowledge/products/jain/j-loc.json";
 import jainJet from "../../knowledge/products/jain/jain-jet.json";
 import { stampProposal } from "./intent-guard";
+import {
+  ENGINE_VERSION,
+  assessRun,
+  compareSizes,
+  operatingSectionsForCapacity,
+  runtimeTradeoff,
+  runConformance
+} from "../../engineering/irrigation-engine.js";
 
 type Env = {
   ENVIRONMENT?: string;
@@ -68,7 +76,7 @@ function selectProducts(body: ContextRequest) {
 
 function buildContext(body: ContextRequest) {
   return {
-    context_version: "irrigation-context-1.4.0",
+    context_version: "irrigation-context-1.5.0",
     generated_at: new Date().toISOString(),
     task: body.task ?? "irrigation_design_advice",
     user_request: body.user_request ?? null,
@@ -77,6 +85,10 @@ function buildContext(body: ContextRequest) {
     active_geometry: body.geometry ?? {},
     active_network: body.network ?? {},
     deterministic_hydraulics: body.hydraulics ?? {},
+    deterministic_engine: {
+      version: ENGINE_VERSION,
+      conformance: runConformance()
+    },
     budget_context: body.budget ?? {},
     explicit_preferences: body.preferences ?? {},
     world_profile: worldProfile,
@@ -116,6 +128,7 @@ function adviserSystemPrompt() {
     "Keep affordability, willingness to spend, quality preference, time tolerance, labour tolerance, convenience and future expansion as separate revisable dimensions. Never stereotype a person from sparse information.",
     "Use only the supplied context for specific product or engineering claims. Distinguish engineering evidence, manufacturer evidence, TAGRO policy and learned observation.",
     "Geometry proposals must be expressed as design intent anchored to existing entity IDs. Never invent final map/canvas coordinates.",
+    "Never calculate or invent hydraulic PASS/FAIL, permissible length, required sections or runtime yourself. Use deterministic results already supplied in context; otherwise name the deterministic check that is needed.",
     "If a low-cost option trades capital for longer irrigation time, more manual work, more sections or less convenience, explain that plainly and do not present it as viable until required deterministic checks are listed or already passed.",
     "If evidence is missing, do not fill the gap with presumed information. Ask, offer a cautious starting point, or say not enough is known yet.",
     "Default response: brief understanding; then one consequential question OR a small number of useful proposals. Do not fill proposals merely because the schema permits them."
@@ -169,6 +182,10 @@ function normalizeStructuredResult(result: any) {
   return { ...response, proposals };
 }
 
+async function readJsonBody(req: Request) {
+  return req.json<any>().catch(() => null);
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     if (req.method === "OPTIONS") {
@@ -189,8 +206,9 @@ export default {
       const model = env.AI_MODEL?.trim() || "";
       const gateway = env.AI_GATEWAY?.trim() || "default";
       const aiReady = aiBinding && Boolean(model);
+      const conformance = runConformance();
       return json({
-        ok: true,
+        ok: conformance.pass,
         service: "tagro-irrigation-ai-context",
         environment: env.ENVIRONMENT ?? "staging",
         build: env.BUILD ?? "dev",
@@ -204,7 +222,9 @@ export default {
         structured_output: "ai-adviser-response-v1.0",
         direct_geometry_from_ai: false,
         assets_bound: Boolean(env.ASSETS),
-        product_seed_count: PRODUCTS.length
+        product_seed_count: PRODUCTS.length,
+        engineering_engine: ENGINE_VERSION,
+        engineering_conformance: conformance
       });
     }
 
@@ -213,6 +233,41 @@ export default {
     if (url.pathname === "/api/knowledge/sources") return json(sourceRegistry);
     if (url.pathname === "/api/knowledge/products") return json({ count: PRODUCTS.length, items: PRODUCTS });
     if (url.pathname === "/api/contracts/adviser-response") return json(adviserResponseSchema);
+
+    if (url.pathname === "/api/engineering/conformance") {
+      const result = runConformance();
+      return json(result, result.pass ? 200 : 500);
+    }
+
+    if (url.pathname === "/api/engineering/assess-run" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      if (!body) return json({ error: "valid JSON body required" }, 400);
+      try { return json(assessRun(body)); }
+      catch (error: any) { return json({ error: "engineering_input_error", detail: String(error?.message ?? error) }, 400); }
+    }
+
+    if (url.pathname === "/api/engineering/compare-sizes" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      if (!body || !Array.isArray(body.nominalSizes)) return json({ error: "body with nominalSizes array required" }, 400);
+      try {
+        const { nominalSizes, ...input } = body;
+        return json({ engineVersion: ENGINE_VERSION, results: compareSizes(input, nominalSizes) });
+      } catch (error: any) {
+        return json({ error: "engineering_input_error", detail: String(error?.message ?? error) }, 400);
+      }
+    }
+
+    if (url.pathname === "/api/engineering/sections" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      if (!body) return json({ error: "valid JSON body required" }, 400);
+      return json(operatingSectionsForCapacity(body));
+    }
+
+    if (url.pathname === "/api/engineering/runtime" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      if (!body) return json({ error: "valid JSON body required" }, 400);
+      return json(runtimeTradeoff(body));
+    }
 
     if (url.pathname === "/api/ai/context" && req.method === "POST") {
       const body = await req.json<ContextRequest>().catch(() => null);
