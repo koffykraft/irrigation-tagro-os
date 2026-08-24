@@ -1,0 +1,15 @@
+{
+  "knowledge_version":"jain-product-1.0.0",
+  "manufacturer":"Jain Irrigation Systems Ltd.",
+  "name":"Jain Fogger",
+  "category":"fogger",
+  "evidence_state":"manufacturer_document",
+  "source":{"path":"/jain-irrigation-agent/Product Files_JAIN/jain_micro_mini_sprinklers/Foggers/Jain Fogger.pdf","dropbox_server_modified":"2026-08-02T05:46:11Z","document_scope":"product technical literature"},
+  "hydraulic":{"recommended_pressure_kg_cm2":{"min":2.0,"max":4.0},"reference_pressure_kg_cm2":3.0,"flow_options_lph":[14,18,24],"emitter_exponent_x":0.45},
+  "filtration":{"required_micron":75},
+  "connection_options":["4 mm barbed","5/32 inch (4 mm) 10-28 UNS screwed","push-fit"],
+  "application":{"manufacturer_examples":["orchards requiring fine mist","greenhouses","glasshouses","temperature_control","humidity_control","canopy_microclimate"],"useful_when_considering":["fine mist rather than soil/root-zone irrigation alone","microclimate management","high filtration and pressure requirements relative to many low-pressure irrigation devices"]},
+  "design_adviser_hooks":{"do_not_assume":["that a fogger is suitable simply because the crop is in a greenhouse","that its low discharge means low pressure requirement","that ordinary drip filtration is automatically adequate"],"ask_or_compare":["whether the purpose is irrigation or climate control","available pressure","water quality and 75-micron filtration","mounting height/location","humidity/temperature objective"]},
+  "generic_comparison_tags":["fogger","fine_mist","greenhouse","microclimate","75_micron"],
+  "image":{"status":"pending_asset_extraction","source_document_available":true}
+}
