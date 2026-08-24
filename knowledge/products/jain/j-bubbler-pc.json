@@ -1,0 +1,15 @@
+{
+  "knowledge_version":"jain-product-1.0.0",
+  "manufacturer":"Jain Irrigation Systems Ltd.",
+  "name":"J-Bubbler PC",
+  "category":"pressure_compensating_bubbler",
+  "evidence_state":"manufacturer_document",
+  "source":{"path":"/jain-irrigation-agent/Product Files_JAIN/jain_micro_mini_sprinklers/Bubblers/J Bubbler PC.pdf","dropbox_server_modified":"2026-08-02T05:46:11Z","document_scope":"product technical literature"},
+  "hydraulic":{"pressure_compensating_range_kg_cm2":{"min":1.0,"max":3.0},"flow_options_lpm":[1.25,2.0,4.0],"flow_options_lph":[75,120,240]},
+  "filtration":{"required_micron":120},
+  "connection":"1/2 inch BSP female threaded inlet",
+  "application":{"manufacturer_examples":["palms","trees","shrubs","undulating_terrain","high_water_requirement_trees"],"useful_when_considering":["controlled high-flow tree irrigation","matching application to soil infiltration","terrain where uniform flow is important"]},
+  "design_adviser_hooks":{"do_not_assume":["that high water requirement means a bubbler is automatically preferable","that 72-240 lph can operate without checking basin/infiltration/runoff","that pressure compensation removes upstream flow and pipe sizing requirements"],"ask_or_compare":["desired root-zone/basin application","soil infiltration and runoff risk","terrain variation","simultaneous bubbler count","available pressure and flow","dripper or jet alternatives"]},
+  "generic_comparison_tags":["bubbler","pressure_compensating","tree_irrigation","high_flow_device","palms"],
+  "image":{"status":"pending_asset_extraction","source_document_available":true}
+}
