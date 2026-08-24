@@ -12,9 +12,25 @@ type Env = {
   AI_MODEL?: string;
 };
 
+type FarmerContext = {
+  stated_need?: string;
+  stated_budget?: number | null;
+  budget_flexibility?: "unknown" | "firm" | "some" | "flexible";
+  quality_preference?: "unknown" | "minimum_workable" | "balanced" | "quality_first";
+  willingness_to_spend?: "unknown" | "low" | "moderate" | "high";
+  affordability?: "unknown" | "constrained" | "comfortable";
+  time_tolerance?: "unknown" | "low" | "moderate" | "high";
+  manual_work_tolerance?: "unknown" | "low" | "moderate" | "high";
+  convenience_priority?: "unknown" | "low" | "moderate" | "high";
+  future_expansion_interest?: "unknown" | "none" | "possible" | "likely";
+  wants_explanation_depth?: "unknown" | "simple" | "normal" | "deep";
+  notes_in_farmer_words?: string[];
+};
+
 type ContextRequest = {
   task?: string;
   user_request?: string;
+  farmer?: FarmerContext;
   field?: Record<string, unknown>;
   geometry?: Record<string, unknown>;
   network?: Record<string, unknown>;
@@ -45,10 +61,11 @@ function selectProducts(body: ContextRequest) {
 
 function buildContext(body: ContextRequest) {
   return {
-    context_version: "irrigation-context-1.0.0",
+    context_version: "irrigation-context-1.1.0",
     generated_at: new Date().toISOString(),
     task: body.task ?? "irrigation_design_advice",
     user_request: body.user_request ?? null,
+    farmer_context: body.farmer ?? {},
     active_field: body.field ?? {},
     active_geometry: body.geometry ?? {},
     active_network: body.network ?? {},
@@ -60,6 +77,13 @@ function buildContext(body: ContextRequest) {
     product_candidates: selectProducts(body),
     source_registry: sourceRegistry,
     rules: {
+      understand_before_advising: true,
+      ask_one_consequential_question_at_a_time_when_possible: true,
+      do_not_present_assumptions_as_facts: true,
+      default_to_plain_language: true,
+      technical_detail_on_demand_or_when_required_for_validity: true,
+      ability_to_pay_is_not_willingness_to_spend: true,
+      farmer_context_is_revisable_not_a_fixed_profile: true,
       deterministic_results_are_authoritative_over_ai_guessing: true,
       manufacturer_specs_are_not_overridden_by_learning: true,
       tagro_policy_generates_options_but_does_not_force_answers: true,
@@ -75,7 +99,22 @@ function adviserPrompt(context: unknown) {
     messages: [
       {
         role: "system",
-        content: "You are the TAGRO Irrigation Design Adviser. Use only the supplied context for specific product or engineering claims. Distinguish engineering evidence, manufacturer evidence, TAGRO policy and learned preference. Generate options, questions and reversible proposals; never claim to have changed accepted geometry. Explain hydraulic, agronomic, human-access, cost and future-expansion trade-offs when relevant. If evidence is missing, say what is missing."
+        content: [
+          "You are the TAGRO Irrigation Design Adviser, speaking with a farmer or field designer.",
+          "Be conversational, calm and practical. Do not sound like a technical report unless the user asks for one.",
+          "Understand the farmer's need before recommending products or a complete system.",
+          "Ask one useful question at a time when more information would materially change the advice.",
+          "Never present an assumption, learned pattern or crop default as a known fact. Say what you know, what you are assuming, and what you still need only when it matters.",
+          "Use ordinary language first. Translate technical results into practical consequences such as more time, more sections, easier access, higher cost or better uniformity.",
+          "Only expose hydraulic jargon, equations, pressure details, permissible-length calculations or product specifications when requested or when a technical limit must be made clear to avoid an invalid design.",
+          "Do not treat 2 HP, single phase, a particular pipe size, emitter type, or budget as a fixed design rule. They are context and trade-off signals.",
+          "Keep affordability, willingness to spend, quality preference, time tolerance, labour tolerance, convenience and future expansion as separate revisable dimensions. Never stereotype a person from sparse information.",
+          "Use only the supplied context for specific product or engineering claims. Distinguish engineering evidence, manufacturer evidence, TAGRO policy and learned preference.",
+          "Generate options, questions and reversible proposals; never claim to have changed accepted geometry.",
+          "If a low-cost option trades capital for longer irrigation time, more manual work, more sections or less convenience, explain that plainly and validate it against deterministic hydraulics before presenting it as viable.",
+          "If evidence is missing, do not fill the gap with presumed information. Ask, offer a cautious starting point, or say not enough is known yet.",
+          "Default response shape: brief understanding of what the farmer is trying to achieve; then either one next question or at most a few relevant options. Put deeper technical detail behind an explicit request or a 'why' explanation."
+        ].join(" ")
       },
       { role: "user", content: JSON.stringify(context) }
     ]
