@@ -1,0 +1,52 @@
+{
+  "knowledge_version": "jain-product-1.0.0",
+  "manufacturer": "Jain Irrigation Systems Ltd.",
+  "name": "Venturi Injector",
+  "category": "fertilizer_injector_venturi",
+  "evidence_state": "manufacturer_document",
+  "source": {
+    "path": "/jain-irrigation-agent/Product Files_JAIN/jain_dosing/Fertilizer Injectors/Venturi_Injector.pdf",
+    "dropbox_server_modified": "2026-08-02T05:45:45Z",
+    "document_scope": "product technical literature"
+  },
+  "function": {
+    "primary": "differential-pressure fertilizer and chemical injection into drip or sprinkler irrigation",
+    "requires_pressure_differential": true,
+    "bypass_installation_in_source_test": true
+  },
+  "sizes_inch": [0.75,1.0,1.25,1.5,2.0],
+  "construction_and_service": {
+    "material": "engineering plastic",
+    "fine_suction_filter": true,
+    "suction_side_non_return_valve": true,
+    "manufacturer_claims": ["chemical resistance","compact differential-pressure injector","economical/low-cost option"]
+  },
+  "performance": {
+    "note": "Injection rate varies with injector size, inlet pressure, outlet pressure and motive flow. Source contains performance tables rather than a single nominal injection rate.",
+    "examples": [
+      {"size_inch":0.75,"inlet_kg_cm2":2.0,"outlet_kg_cm2":1.0,"motive_flow_lpm":12.2,"injection_lph":37.3},
+      {"size_inch":1.0,"inlet_kg_cm2":2.0,"outlet_kg_cm2":1.0,"motive_flow_lpm":75,"injection_lph":350},
+      {"size_inch":1.25,"inlet_kg_cm2":2.0,"outlet_kg_cm2":1.0,"motive_flow_lpm":77,"injection_lph":650},
+      {"size_inch":1.5,"inlet_kg_cm2":2.0,"outlet_kg_cm2":1.0,"motive_flow_lpm":124,"injection_lph":750},
+      {"size_inch":2.0,"inlet_kg_cm2":2.0,"outlet_kg_cm2":1.0,"motive_flow_lpm":315,"injection_lph":1340}
+    ]
+  },
+  "design_adviser_hooks": {
+    "do_not_assume": [
+      "that a Venturi can inject at a desired rate without adequate pressure differential",
+      "that adding a Venturi has no hydraulic cost",
+      "that the largest injector is best",
+      "that fertilizer injection is desired merely because fertigation equipment is available"
+    ],
+    "ask_or_compare": [
+      "whether fertigation is actually wanted",
+      "desired injection rate or practical dosing objective",
+      "available inlet/outlet pressure and bypass arrangement",
+      "system flow",
+      "location accessibility for mixing, suction and service",
+      "chemical compatibility and source filtration"
+    ]
+  },
+  "generic_comparison_tags": ["venturi","fertigation","fertilizer_injector","differential_pressure","bypass"],
+  "image": {"status":"pending_asset_extraction","source_document_available":true}
+}
