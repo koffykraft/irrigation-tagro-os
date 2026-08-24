@@ -141,14 +141,16 @@ export default {
     if (url.pathname === "/health") {
       const aiBinding = Boolean(env.AI);
       const aiModel = Boolean(env.AI_MODEL?.trim());
+      const aiReady = aiBinding && aiModel;
       return json({
         ok: true,
         service: "tagro-irrigation-ai-context",
         environment: env.ENVIRONMENT ?? "staging",
         build: env.BUILD ?? "dev",
+        ai_bound: aiReady,
         ai_binding: aiBinding,
         ai_model_configured: aiModel,
-        ai_ready: aiBinding && aiModel,
+        ai_ready: aiReady,
         assets_bound: Boolean(env.ASSETS),
         product_seed_count: PRODUCTS.length
       });
