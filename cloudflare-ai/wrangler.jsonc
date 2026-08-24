@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tagro-irrigation-ai-staging",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-24",
+  "vars": {
+    "ENVIRONMENT": "staging",
+    "BUILD": "knowledge-v1",
+    "AI_MODEL": ""
+  },
+  "ai": {
+    "binding": "AI"
+  }
+}
