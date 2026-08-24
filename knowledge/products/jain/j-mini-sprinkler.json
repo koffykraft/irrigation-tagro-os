@@ -1,0 +1,49 @@
+{
+  "knowledge_version": "jain-product-1.0.0",
+  "manufacturer": "Jain Irrigation Systems Ltd.",
+  "name": "J Mini Sprinkler",
+  "category": "mini_sprinkler",
+  "evidence_state": "manufacturer_document",
+  "source": {
+    "path": "/jain-irrigation-agent/Product Files_JAIN/jain_micro_mini_sprinklers/Micro Sprinklers/J Mini Sprinkler.pdf",
+    "dropbox_server_modified": "2026-08-02T05:46:11Z",
+    "document_scope": "product technical literature"
+  },
+  "standards_claimed": ["IS 14605","ISO 8026"],
+  "hydraulic": {
+    "recommended_pressure_kg_cm2": {"min":1.0,"max":3.0},
+    "nominal_pressure_kg_cm2": 1.0,
+    "flow_range_lph_at_1kg_cm2": {"min":16,"max":180},
+    "recommended_spacing_m": {"min":1.2,"max":4.4},
+    "nozzles": [
+      {"colour":"black","diameter_mm":0.65,"flow_coefficient_k":16,"emitter_exponent_x":0.51,"flow_lph_by_pressure":{"1.0":16,"1.5":19,"2.0":23,"2.5":26,"3.0":28},"wetted_diameter_m_by_pressure":{"1.0":2.4,"1.5":2.8,"2.0":3.2,"2.5":3.6,"3.0":4.0}},
+      {"colour":"blue","diameter_mm":0.87,"flow_coefficient_k":26,"emitter_exponent_x":0.51,"flow_lph_by_pressure":{"1.0":26,"1.5":32,"2.0":37,"2.5":42,"3.0":46},"wetted_diameter_m_by_pressure":{"1.0":3.4,"1.5":3.6,"2.0":4.0,"2.5":4.2,"3.0":4.4}},
+      {"colour":"green","diameter_mm":1.12,"flow_coefficient_k":44,"emitter_exponent_x":0.51,"flow_lph_by_pressure":{"1.0":44,"1.5":55,"2.0":63,"2.5":71,"3.0":78},"wetted_diameter_m_by_pressure":{"1.0":4.2,"1.5":4.4,"2.0":4.6,"2.5":4.8,"3.0":5.0}},
+      {"colour":"red","diameter_mm":1.50,"flow_coefficient_k":85,"emitter_exponent_x":0.40,"flow_lph_by_pressure":{"1.0":85,"1.5":100,"2.0":112,"2.5":122,"3.0":131},"wetted_diameter_m_by_pressure":{"1.0":5.6,"1.5":6.0,"2.0":6.8,"2.5":7.0,"3.0":7.2}},
+      {"colour":"white","diameter_mm":1.85,"flow_coefficient_k":110,"emitter_exponent_x":0.43,"flow_lph_by_pressure":{"1.0":110,"1.5":130,"2.0":148,"2.5":163,"3.0":176},"wetted_diameter_m_by_pressure":{"1.0":6.0,"1.5":7.6,"2.0":8.0,"2.5":8.2,"3.0":8.4}},
+      {"colour":"orange","diameter_mm":2.10,"flow_coefficient_k":140,"emitter_exponent_x":0.44,"flow_lph_by_pressure":{"1.0":140,"1.5":163,"2.0":185,"2.5":205,"3.0":222},"wetted_diameter_m_by_pressure":{"1.0":7.4,"1.5":8.0,"2.0":8.2,"2.5":8.4,"3.0":8.6}},
+      {"colour":"yellow","diameter_mm":2.50,"flow_coefficient_k":180,"emitter_exponent_x":0.40,"flow_lph_by_pressure":{"1.0":180,"1.5":211,"2.0":237,"2.5":259,"3.0":279},"wetted_diameter_m_by_pressure":{"1.0":8.0,"1.5":8.4,"2.0":8.6,"2.5":8.8,"3.0":8.8}}
+    ]
+  },
+  "filtration": {"minimum_micron":100},
+  "connection": "3/8 inch BSP male threaded inlet",
+  "application": {
+    "manufacturer_examples": ["under_foliage_irrigation","landscape","flower_beds","shrubs","nurseries","vegetables","Rainport_system"],
+    "useful_when_considering": [
+      "a broader wetted area than individual drippers",
+      "relatively low-flow sprinkler application",
+      "under-foliage or nursery/vegetable irrigation",
+      "soils where a point source does not give the desired wetted area"
+    ]
+  },
+  "design_adviser_hooks": {
+    "do_not_assume": [
+      "that nominal 1 kg/cm2 is available throughout the field",
+      "that brochure spacing should replace actual crop/soil/wetting objectives",
+      "that sprinkler application is preferable to point-source irrigation merely because wetted diameter is larger"
+    ],
+    "ask_or_compare": ["desired wetted diameter","pressure available at device","wind exposure","application rate","soil infiltration","number of devices operating together","filtration"]
+  },
+  "generic_comparison_tags": ["mini_sprinkler","under_foliage","nursery","vegetable","broad_wetting"],
+  "image": {"status":"pending_asset_extraction","source_document_available":true}
+}
