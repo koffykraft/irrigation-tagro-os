@@ -51,7 +51,7 @@
     { maxZoom: 20, attribution: "© OpenStreetMap contributors", pmIgnore: true }
   );
 
-  L.control.layers({ Satellite: satellite, Street: street }, null, { position: "topleft", collapsed: true }).addTo(map);
+  L.control.layers({ Satellite: satellite, Street: street }, {}, { position: "topleft", collapsed: true }).addTo(map);
 
   map.pm.setGlobalOptions({
     allowSelfIntersection: false,
@@ -93,7 +93,7 @@
       L.DomEvent.stopPropagation(event);
       selectObject(object.id);
     });
-    layer.on("pm:edit", () => saveLayerGeometry(object.id, layer));
+    layer.on("pm:update", () => saveLayerGeometry(object.id, layer));
     layer.on("pm:dragend", () => saveLayerGeometry(object.id, layer));
     layer.addTo(map);
     return layer;
@@ -103,7 +103,6 @@
     const geometry = geometryFromLayer(layer);
     if (!geometry) return;
     store.updateGeometry(id, geometry, "map_edit");
-    updateSelection();
   }
 
   function clearRenderedLayers() {
@@ -128,8 +127,8 @@
 
   function fitToObjects() {
     const group = L.featureGroup([...layers.values()]);
-    const bounds = group.getBounds();
-    if (bounds?.isValid()) map.fitBounds(bounds.pad(0.18), { maxZoom: 20 });
+    const objectBounds = group.getBounds();
+    if (objectBounds?.isValid()) map.fitBounds(objectBounds.pad(0.18), { maxZoom: 20 });
   }
 
   function lineLengthMeters(geometry) {
@@ -163,7 +162,8 @@
     const area = polygonAreaSqm(object.geometry);
     if (area != null) {
       const acres = area / 4046.8564224;
-      return `${area.toFixed(area < 1000 ? 0 : -1)} m² · ${acres.toFixed(2)} acres`;
+      const areaText = area < 1000 ? area.toFixed(0) : Math.round(area).toLocaleString();
+      return `${areaText} m² · ${acres.toFixed(2)} acres`;
     }
     const c = object.geometry?.coordinates;
     if (object.geometry?.type === "Point" && Array.isArray(c)) return `${c[1].toFixed(6)}, ${c[0].toFixed(6)}`;
