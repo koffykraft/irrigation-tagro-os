@@ -1,0 +1,14 @@
+{
+  "knowledge_version":"jain-product-1.0.0",
+  "manufacturer":"Jain Irrigation Systems Ltd.",
+  "name":"Acurain Opal",
+  "category":"under_tree_sprinkler",
+  "evidence_state":"manufacturer_document",
+  "source":{"path":"/jain-irrigation-agent/Product Files_JAIN/jain_micro_mini_sprinklers/Under Tree Systems/Opal.pdf","dropbox_server_modified":"2026-08-02T05:46:11Z","document_scope":"product technical literature"},
+  "hydraulic":{"recommended_pressure_kg_cm2":{"min":1.5,"max":3.5},"nominal_pressure_kg_cm2":1.5,"flow_range_lph":{"min":60,"max":490},"wetted_diameter_m":{"min":9,"max":17},"trajectory_options_deg":[9,15,24]},
+  "connection_options":["1/2 inch male threaded","3/8 inch male threaded","female Acme thread"],
+  "application":{"manufacturer_examples":["under_tree_irrigation","blossom_shower"],"useful_when_considering":["large tree root-zone wetting","low-angle under-canopy application","broader wetting than drippers/bubblers"]},
+  "design_adviser_hooks":{"do_not_assume":["that large wetted diameter is desirable for every tree","that 1.5-3.5 kg/cm2 is available at every device","that sprinkler throw in brochure conditions equals field throw under wind/canopy conditions"],"ask_or_compare":["tree/root-zone wetting objective","canopy and under-tree clearance","available pressure","wind exposure","soil infiltration","simultaneous flow demand"]},
+  "generic_comparison_tags":["under_tree","orchard_sprinkler","low_angle","broad_wetting","tree_irrigation"],
+  "image":{"status":"pending_asset_extraction","source_document_available":true}
+}
