@@ -1,0 +1,69 @@
+{
+  "knowledge_version": "jain-product-1.0.0",
+  "manufacturer": "Jain Irrigation Systems Ltd.",
+  "name": "Modular Sprinkler",
+  "category": "micro_sprinkler_micro_jet",
+  "evidence_state": "manufacturer_document",
+  "source": {
+    "path": "/jain-irrigation-agent/Product Files_JAIN/jain_micro_mini_sprinklers/Micro Sprinklers/Modular Sprinkler.pdf",
+    "dropbox_server_modified": "2026-08-02T05:46:11Z",
+    "document_scope": "product technical literature"
+  },
+  "hydraulic": {
+    "recommended_pressure_kg_cm2": {"min": 1.5, "max": 3.5},
+    "flow_range_lph": {"min": 25, "max": 397},
+    "recommended_spacing_m": {"min": 0.5, "max": 5.0},
+    "nominal_nozzle_table_at_2kg_cm2": [
+      {"colour":"violet","diameter_mm":0.82,"flow_lph":35},
+      {"colour":"brown","diameter_mm":0.94,"flow_lph":43},
+      {"colour":"gray","diameter_mm":1.16,"flow_lph":70},
+      {"colour":"green","diameter_mm":1.41,"flow_lph":105},
+      {"colour":"orange","diameter_mm":1.50,"flow_lph":120},
+      {"colour":"yellow","diameter_mm":1.73,"flow_lph":160},
+      {"colour":"blue","diameter_mm":1.92,"flow_lph":200},
+      {"colour":"ivory","diameter_mm":2.07,"flow_lph":235},
+      {"colour":"red","diameter_mm":2.18,"flow_lph":260},
+      {"colour":"black","diameter_mm":2.34,"flow_lph":300}
+    ]
+  },
+  "filtration": {
+    "manufacturer_text_interpreted": [
+      {"nozzles":["purple","brown"],"minimum_micron":130},
+      {"nozzles":["other"],"minimum_micron":200}
+    ],
+    "note": "Values are preserved from the source wording and should not be silently reordered or generalized."
+  },
+  "application": {
+    "manufacturer_examples": ["orchards","vegetables","gardens","greenhouses","shade_houses","poultry_cooling","livestock_cooling"],
+    "useful_when_considering": [
+      "a wider wetted area than point-source drippers",
+      "choice among different wetting patterns or droplet behaviours",
+      "short water-availability windows where application rate and wetted area matter",
+      "orchard or mixed planting where local wetting geometry is part of the design"
+    ]
+  },
+  "construction_and_service": {
+    "detachable_nozzle_and_spinner": true,
+    "optional_anti_mist": true,
+    "connection": "1/8 inch push-fit tapered inlet",
+    "manufacturer_claims": ["maintenance/inspection access","multiple spreader/swivel patterns","polymer construction","gentle precipitation"]
+  },
+  "design_adviser_hooks": {
+    "do_not_assume": [
+      "that broader wetting is better than drippers",
+      "that the highest-flow nozzle is desirable",
+      "that 1.5-3.5 kg/cm2 is available at the field device",
+      "that brochure wetting diameter equals field performance under all conditions"
+    ],
+    "ask_or_compare": [
+      "desired wetting area around the crop",
+      "available operating pressure",
+      "wind/exposure where relevant",
+      "soil infiltration and whether gentle broad application is beneficial",
+      "water source capacity and simultaneous device count",
+      "filtration"
+    ]
+  },
+  "generic_comparison_tags": ["micro_sprinkler","micro_jet","broad_wetting","interchangeable_nozzle","orchard_under_tree"],
+  "image": {"status":"pending_asset_extraction","source_document_available":true}
+}
