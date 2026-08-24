@@ -1,0 +1,33 @@
+{
+  "id": "jain:jain-jet",
+  "manufacturer": "Jain Irrigation",
+  "official_name": "Jain Jet",
+  "category": "micro_jet",
+  "source": {
+    "dropbox_path": "/jain-irrigation-agent/Product Files_JAIN/jain_micro_mini_sprinklers/Jets/Jain Jet.pdf",
+    "manufacturer_pdf_verified": true
+  },
+  "specifications": {
+    "flow_range_lph": [14.4, 111.3],
+    "working_pressure_kg_cm2": [0.7, 2.1],
+    "wetted_diameter_m": [2.0, 10.0],
+    "filter_mesh": 120,
+    "moving_parts": false,
+    "nozzle_count": 7,
+    "wetting_pattern_count": 18,
+    "top_hat_available": true
+  },
+  "manufacturer_use_guidance": [
+    "orchards",
+    "vineyards",
+    "organic or conventional fields",
+    "young trees may use top-hat reduced-radius higher-application arrangement"
+  ],
+  "tagro_reasoning_hooks": [
+    "compare wetting radius and application rate against multiple drippers for coconut/fruit-tree root zones",
+    "consider under-tree access and visibility for maintenance",
+    "check total flow carefully before recommending on low-power small-field systems",
+    "use nozzle/pattern choice as a design variable rather than treating Jain Jet as one fixed-discharge device"
+  ],
+  "images": {"status": "pending_asset_extraction", "refs": []}
+}
