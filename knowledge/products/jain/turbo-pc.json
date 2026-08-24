@@ -1,0 +1,56 @@
+{
+  "knowledge_version": "jain-product-1.0.0",
+  "manufacturer": "Jain Irrigation Systems Ltd.",
+  "name": "Turbo PC",
+  "category": "online_pc_emitter",
+  "evidence_state": "manufacturer_document",
+  "source": {
+    "path": "/jain-irrigation-agent/Product Files_JAIN/jain_drip/Emitters/turbo pc.pdf",
+    "dropbox_server_modified": "2026-08-02T05:45:31Z",
+    "document_scope": "product technical literature"
+  },
+  "hydraulic": {
+    "pressure_compensating_range_kg_cm2": {"min":0.5,"max":4.0},
+    "nominal_discharges_lph": [2,4,8,24],
+    "variants": [
+      {"name":"PC","base_colour":"black","behaviour":"pressure_compensating"},
+      {"name":"PCNL","base_colour":"grey","behaviour":"pressure_compensating_non_leakage","opening_pressure_kg_cm2":0.3,"closing_pressure_kg_cm2":0.2}
+    ],
+    "manufacturer_coefficient_of_variation_max_pct": 4,
+    "emitter_exponent": 0
+  },
+  "filtration": {"recommended_mesh":120,"recommended_micron":130},
+  "construction_and_service": {
+    "barbed_inlet": true,
+    "narrow_inlet_filter": true,
+    "self_cleaning_diaphragm_claim": true,
+    "factory_sealed": true,
+    "recommended_punch_mm": 2.5,
+    "barbed_outlet_tube_mm": "3x5"
+  },
+  "application": {
+    "manufacturer_examples": ["orchards","vineyards","greenhouses","nurseries","landscape","pulse_irrigation","soilless_culture","harsh_topography","subsurface_installation"],
+    "useful_when_considering": [
+      "large pressure variation or undulating terrain",
+      "pulse irrigation or non-leakage behaviour with PCNL",
+      "situations where uniform discharge over a broad pressure range earns its additional product complexity/cost"
+    ]
+  },
+  "design_adviser_hooks": {
+    "do_not_assume": [
+      "that pressure compensation is necessary for a short level field",
+      "that a PC emitter removes the need for hydraulic sizing or filtration",
+      "that the 24 LPH option is suitable merely because a crop needs more water"
+    ],
+    "ask_or_compare": [
+      "pressure variation expected across the operating group",
+      "terrain/elevation variation",
+      "need for non-leakage/pulse behaviour",
+      "required discharge and number of emitters per plant",
+      "filtration",
+      "cost benefit against a simpler turbulent emitter"
+    ]
+  },
+  "generic_comparison_tags": ["pressure_compensating_emitter","pcnl","orchard","undulating_terrain","pulse_irrigation"],
+  "image": {"status":"pending_asset_extraction","source_document_available":true}
+}
