@@ -7,6 +7,7 @@
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
   const layers = new Map();
+  const previewLayers = [];
   let selectedId = null;
   let activeKind = "select";
   let locationMarker = null;
@@ -78,13 +79,9 @@
     const coords = latLngsFromGeometry(object.geometry);
     let layer;
 
-    if (object.geometry?.type === "Point") {
-      layer = L.circleMarker(coords, style);
-    } else if (object.geometry?.type === "Polygon") {
-      layer = L.polygon(coords, style);
-    } else {
-      layer = L.polyline(coords, style);
-    }
+    if (object.geometry?.type === "Point") layer = L.circleMarker(coords, style);
+    else if (object.geometry?.type === "Polygon") layer = L.polygon(coords, style);
+    else layer = L.polyline(coords, style);
 
     layer.options.tagroObjectId = object.id;
     layer.options.tagroKind = object.kind;
@@ -112,6 +109,78 @@
     layers.clear();
   }
 
+  function clearPreviewLayers() {
+    while (previewLayers.length) {
+      const layer = previewLayers.pop();
+      try { map.removeLayer(layer); } catch {}
+    }
+  }
+
+  function renderProposalPreview() {
+    clearPreviewLayers();
+    const adapter = window.TAGROSpatialProposal;
+    const active = adapter?.current?.() || null;
+    const panel = $("#proposalPanel");
+
+    if (!active?.objects?.length) {
+      panel?.classList.remove("show");
+      return;
+    }
+
+    active.objects.forEach(spec => {
+      const coords = latLngsFromGeometry(spec.geometry);
+      if (!coords) return;
+      let layer;
+      if (spec.geometry.type === "Point") {
+        layer = L.circleMarker(coords, {
+          radius: 7,
+          color: "#ef8a35",
+          fillColor: "#ef8a35",
+          fillOpacity: 0.5,
+          weight: 3,
+          interactive: false,
+          pmIgnore: true
+        });
+      } else if (spec.geometry.type === "Polygon") {
+        layer = L.polygon(coords, {
+          color: "#ef8a35",
+          weight: 4,
+          dashArray: "9 7",
+          fillColor: "#ef8a35",
+          fillOpacity: 0.05,
+          interactive: false,
+          pmIgnore: true,
+          className: "tagro-proposal-preview"
+        });
+      } else {
+        layer = L.polyline(coords, {
+          color: "#ef8a35",
+          weight: 4,
+          dashArray: "9 7",
+          opacity: 0.9,
+          interactive: false,
+          pmIgnore: true,
+          className: "tagro-proposal-preview"
+        });
+      }
+      layer.bindTooltip("PROPOSED", { direction: "top", className: "tagro-label", opacity: 0.95 });
+      layer.addTo(map);
+      previewLayers.push(layer);
+    });
+
+    $("#proposalTitle").textContent = active.proposal?.summary || "Geometry proposal";
+    $("#proposalNote").textContent = active.note || "Preview only. Geometry is not yet part of the design.";
+    panel?.classList.add("show");
+  }
+
+  function fitToObjects() {
+    const all = [...layers.values(), ...previewLayers];
+    if (!all.length) return;
+    const group = L.featureGroup(all);
+    const objectBounds = group.getBounds();
+    if (objectBounds?.isValid()) map.fitBounds(objectBounds.pad(0.18), { maxZoom: 20 });
+  }
+
   function renderAll({ fit = false } = {}) {
     const state = store.read();
     clearRenderedLayers();
@@ -120,15 +189,10 @@
       const layer = createLayer(object);
       layers.set(object.id, layer);
     });
+    renderProposalPreview();
     updateStatus(state);
     updateSelection();
-    if (fit && layers.size) fitToObjects();
-  }
-
-  function fitToObjects() {
-    const group = L.featureGroup([...layers.values()]);
-    const objectBounds = group.getBounds();
-    if (objectBounds?.isValid()) map.fitBounds(objectBounds.pad(0.18), { maxZoom: 20 });
+    if (fit && (layers.size || previewLayers.length)) fitToObjects();
   }
 
   function lineLengthMeters(geometry) {
@@ -145,7 +209,7 @@
     if (geometry?.type !== "Polygon") return null;
     const ring = geometry.coordinates?.[0];
     if (!Array.isArray(ring) || ring.length < 3) return null;
-    const R = 6378137;
+    const earthRadius = 6378137;
     let area = 0;
     for (let i = 0; i < ring.length; i += 1) {
       const [lng1, lat1] = ring[i];
@@ -153,7 +217,7 @@
       const dLng = (lng2 - lng1) * Math.PI / 180;
       area += dLng * (2 + Math.sin(lat1 * Math.PI / 180) + Math.sin(lat2 * Math.PI / 180));
     }
-    return Math.abs(area * R * R / 2);
+    return Math.abs(area * earthRadius * earthRadius / 2);
   }
 
   function measurementText(object) {
@@ -165,8 +229,8 @@
       const areaText = area < 1000 ? area.toFixed(0) : Math.round(area).toLocaleString();
       return `${areaText} m² · ${acres.toFixed(2)} acres`;
     }
-    const c = object.geometry?.coordinates;
-    if (object.geometry?.type === "Point" && Array.isArray(c)) return `${c[1].toFixed(6)}, ${c[0].toFixed(6)}`;
+    const coordinate = object.geometry?.coordinates;
+    if (object.geometry?.type === "Point" && Array.isArray(coordinate)) return `${coordinate[1].toFixed(6)}, ${coordinate[0].toFixed(6)}`;
     return "";
   }
 
@@ -180,6 +244,7 @@
     if (counts.lateral) parts.push(`${counts.lateral} lateral`);
     if (counts.plant) parts.push(`${counts.plant} plant${counts.plant === 1 ? "" : "s"}`);
     if (counts.water_source) parts.push(`${counts.water_source} water source`);
+    if (previewLayers.length) parts.push(`${previewLayers.length} proposed`);
     const tool = activeKind === "select" ? "Select" : `Drawing ${LABEL[activeKind] || activeKind}`;
     $("#status").textContent = parts.length ? `${tool} · ${parts.join(" · ")} · real map geometry` : `${tool} · blank field · nothing assumed`;
   }
@@ -281,6 +346,19 @@
     renderAll();
   });
 
+  $("#acceptProposal").addEventListener("click", () => {
+    const result = window.TAGROSpatialProposal?.accept?.();
+    if (result?.ok) {
+      clearSelection();
+      renderAll();
+    }
+  });
+
+  $("#clearProposal").addEventListener("click", () => {
+    window.TAGROSpatialProposal?.clear?.();
+    renderAll();
+  });
+
   async function searchPlace() {
     const value = $("#searchInput").value.trim();
     if (!value) return;
@@ -320,6 +398,7 @@
   });
 
   window.addEventListener("tagro:spatial-change", () => renderAll());
+  window.addEventListener("tagro:spatial-preview-change", () => renderAll());
   document.addEventListener("keydown", event => {
     if (event.key !== "Escape") return;
     map.pm.disableDraw();
@@ -329,6 +408,7 @@
     updateStatus();
   });
 
+  window.TAGROFieldMap = Object.freeze({ map, renderAll, fitToObjects });
   renderAll({ fit: true });
   setTool("select");
 })();
