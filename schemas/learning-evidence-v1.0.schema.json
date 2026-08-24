@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tagro.in/schemas/learning-evidence-v1.0.schema.json",
+  "title": "TAGRO Irrigation Learning Evidence v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidence_id",
+    "job_id",
+    "scope",
+    "kind",
+    "subject_ids",
+    "observed_at",
+    "source",
+    "state",
+    "summary",
+    "facts",
+    "interpretations",
+    "confidence",
+    "may_generalize"
+  ],
+  "properties": {
+    "evidence_id": {"type": "string"},
+    "job_id": {"type": "string"},
+    "scope": {"enum": ["job", "farm", "organisation", "regional"]},
+    "kind": {
+      "enum": [
+        "proposal_accepted",
+        "proposal_rejected",
+        "proposal_modified",
+        "preference_stated",
+        "preference_changed",
+        "installed",
+        "installation_modified",
+        "operating_observation",
+        "service_observation",
+        "performance_outcome",
+        "product_outcome",
+        "design_outcome"
+      ]
+    },
+    "subject_ids": {"type": "array", "items": {"type": "string"}},
+    "proposal_id": {"type": ["string", "null"]},
+    "observed_at": {"type": "string"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "actor", "provenance_ref"],
+      "properties": {
+        "type": {"enum": ["human_action", "farmer_statement", "designer_note", "installation_record", "service_record", "system_observation"]},
+        "actor": {"type": ["string", "null"]},
+        "provenance_ref": {"type": ["string", "null"]}
+      }
+    },
+    "state": {"enum": ["observed", "confirmed", "superseded"]},
+    "summary": {"type": "string"},
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "value", "unit"],
+        "properties": {
+          "name": {"type": "string"},
+          "value": {},
+          "unit": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "interpretations": {
+      "type": "array",
+      "description": "Revisable observations derived from evidence. They are never engineering facts.",
+      "items": {"type": "string"}
+    },
+    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "may_generalize": {"type": "boolean", "description": "False by default. A single job preference or outcome must not become a global rule."},
+    "generalization_conditions": {"type": "array", "items": {"type": "string"}}
+  }
+}
