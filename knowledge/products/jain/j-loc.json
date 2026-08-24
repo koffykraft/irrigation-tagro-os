@@ -1,0 +1,29 @@
+{
+  "id": "jain:j-loc",
+  "manufacturer": "Jain Irrigation",
+  "official_name": "J-Loc Emitter",
+  "category": "take_apart_online_emitter",
+  "source": {
+    "dropbox_path": "/jain-irrigation-agent/Product Files_JAIN/jain_drip/Emitters/J Loc Emitter.pdf",
+    "manufacturer_pdf_verified": true
+  },
+  "specifications": {
+    "discharge_lph": [2, 4, 8, 15],
+    "nominal_operating_pressure_kg_cm2": 1.0,
+    "filtration_micron_max": 130,
+    "extension_tube_id_mm": 4,
+    "recommended_punch_mm": 2.9,
+    "take_apart": true,
+    "pressure_compensating": false
+  },
+  "manufacturer_use_guidance": [
+    "fruit orchards requiring multiple drippers around the tree trunk to cover a widespread root zone",
+    "horizontal or vertical installation depending on crop/use"
+  ],
+  "tagro_reasoning_hooks": [
+    "strong candidate for tree crops where multiple low-cost outlet points around the root zone are useful",
+    "compare against PC emitters when terrain/pressure variation is meaningful",
+    "consider 15 LPH option only with explicit lateral-flow and wetting checks"
+  ],
+  "images": {"status": "pending_asset_extraction", "refs": []}
+}
