@@ -9,6 +9,8 @@ import modularSprinkler from "../../knowledge/products/jain/modular-sprinkler.js
 import jMiniSprinkler from "../../knowledge/products/jain/j-mini-sprinkler.json";
 import turboPc from "../../knowledge/products/jain/turbo-pc.json";
 import ghoomar from "../../knowledge/products/jain/ghoomar-sand-separator.json";
+import venturiInjector from "../../knowledge/products/jain/venturi-injector.json";
+import spinCleanDisc from "../../knowledge/products/jain/spin-clean-disc-filter.json";
 import { stampProposal } from "./intent-guard";
 import {
   ENGINE_VERSION,
@@ -59,7 +61,10 @@ type ContextRequest = {
   product_query?: { categories?: string[]; manufacturer?: string; generic_allowed?: boolean };
 };
 
-const PRODUCTS: any[] = [jscpc, jloc, jainJet, modularSprinkler, jMiniSprinkler, turboPc, ghoomar];
+const PRODUCTS: any[] = [
+  jscpc, jloc, jainJet, modularSprinkler, jMiniSprinkler,
+  turboPc, ghoomar, venturiInjector, spinCleanDisc
+];
 
 const PRODUCT_INDEX = PRODUCTS.map((p: any) => ({
   name: p.name,
@@ -101,7 +106,8 @@ function productTerms(body: ContextRequest) {
   if (/jet|fan jet|spray jet|wetting pattern/.test(q)) add("jet", "broad_wetting", "micro_jet");
   if (/mini sprinkler|under foliage|nursery/.test(q)) add("mini_sprinkler", "under_foliage", "nursery");
   if (/micro sprinkler|sprinkler|broad wet|orchard spray/.test(q)) add("micro_sprinkler", "sprinkler", "broad_wetting");
-  if (/filter|sand|grit|borewell|well water|hydrocyclone/.test(q)) add("filter", "sand_separator", "well_water");
+  if (/filter|sand|grit|borewell|well water|hydrocyclone|disc/.test(q)) add("filter", "sand_separator", "disc_filter", "well_water");
+  if (/fertig|fertiliz|fertilis|venturi|inject|chemical dosing|nutrient/.test(q)) add("venturi", "fertigation", "fertilizer_injector", "differential_pressure");
   return [...new Set(terms)];
 }
 
@@ -123,7 +129,7 @@ function selectProducts(body: ContextRequest) {
 function buildContext(body: ContextRequest) {
   const productCandidates = selectProducts(body);
   return {
-    context_version: "irrigation-context-1.6.0",
+    context_version: "irrigation-context-1.7.0",
     generated_at: new Date().toISOString(),
     task: body.task ?? "irrigation_design_advice",
     user_request: body.user_request ?? null,
@@ -182,6 +188,7 @@ function adviserSystemPrompt() {
     "Use only the supplied context for specific product or engineering claims. Distinguish engineering evidence, manufacturer evidence, TAGRO policy and learned observation.",
     "The product catalogue index tells you what product knowledge exists; detailed product_candidates are the records retrieved for the current question. Do not invent specifications for products that are only in the index.",
     "A Jain product may be useful evidence or an option, but do not force Jain where a generic requirement is sufficient or a simpler product better fits the farmer's priorities.",
+    "Treat filtration and fertigation as hydraulic/network decisions: pressure loss, source-water contamination, device filtration requirement, injection differential and service access can matter.",
     "Geometry proposals must be expressed as design intent anchored to existing entity IDs. Never invent final map/canvas coordinates.",
     "Never calculate or invent hydraulic PASS/FAIL, permissible length, required sections or runtime yourself. Use deterministic results already supplied in context; otherwise name the deterministic check that is needed.",
     "If a low-cost option trades capital for longer irrigation time, more manual work, more sections or less convenience, explain that plainly and do not present it as viable until required deterministic checks are listed or already passed.",
