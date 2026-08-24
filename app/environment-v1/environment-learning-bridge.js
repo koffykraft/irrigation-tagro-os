@@ -108,7 +108,6 @@
     const isAdviser = url?.pathname === "/api/ai/advise" && String(init?.method || "GET").toUpperCase() === "POST";
     const nextInit = isAdviser ? injectLearning(init) : init;
     const response = await originalFetch(input, nextInit);
-
     if (isAdviser) response.clone().json().then(rememberProposals).catch(() => {});
     return response;
   };
@@ -129,6 +128,20 @@
     const button = event.target?.closest?.("button");
     if (!button) return;
     const label = button.textContent?.trim() || "";
+
+    if (label === "Preview drawing") {
+      const proposal = proposalFromButton(button);
+      const spatial = window.TAGROSpatial?.snapshot?.();
+      if (proposal?.kind === "geometry" && spatial?.objects?.length && window.TAGROSpatialProposal?.preview) {
+        const result = window.TAGROSpatialProposal.preview(proposal);
+        if (result?.ok) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          location.href = `./field-map.html?proposal=${encodeURIComponent(proposal.proposal_id || "active")}`;
+          return;
+        }
+      }
+    }
 
     if (label === "Prefer controls near here") {
       const objectId = selectedObjectId();
