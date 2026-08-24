@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tagro.in/schemas/ai-adviser-response-v1.0.schema.json",
+  "title": "TAGRO Irrigation Adviser Response v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["message", "understanding", "next_question", "question_reason", "proposals"],
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "Plain-spoken conversational reply. No technical dump unless required by the current question."
+    },
+    "understanding": {
+      "type": ["string", "null"],
+      "description": "Short revisable reflection of what the adviser currently understands. Must not convert assumptions into facts."
+    },
+    "next_question": {
+      "type": ["string", "null"],
+      "description": "At most one consequential next question. Null when no question is needed."
+    },
+    "question_reason": {
+      "type": ["string", "null"],
+      "description": "Why the next question matters, in plain language."
+    },
+    "proposals": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "summary", "affected_ids", "assumptions", "unknowns", "checks_required", "intent", "reasoning", "consequences", "source_refs", "confidence"],
+        "properties": {
+          "kind": {
+            "enum": ["geometry", "design", "product", "operating_plan", "human_access", "budget_tradeoff", "future_expansion"]
+          },
+          "summary": {"type": "string"},
+          "affected_ids": {"type": "array", "items": {"type": "string"}},
+          "assumptions": {"type": "array", "items": {"type": "string"}},
+          "unknowns": {"type": "array", "items": {"type": "string"}},
+          "checks_required": {"type": "array", "items": {"type": "string"}},
+          "intent": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["operation", "anchor_ids", "parameters"],
+            "properties": {
+              "operation": {
+                "enum": [
+                  "generate_laterals",
+                  "generate_submains",
+                  "place_devices",
+                  "move_control_near",
+                  "split_run",
+                  "change_operating_groups",
+                  "compare_products",
+                  "compare_pipe_sizes",
+                  "stage_installation",
+                  "future_ready_route",
+                  "review_only"
+                ]
+              },
+              "anchor_ids": {"type": "array", "items": {"type": "string"}},
+              "parameters": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Design intent parameters only. AI must not output final canvas/map coordinates. Geometry adapters resolve coordinates from authoritative geometry."
+              }
+            }
+          },
+          "reasoning": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["engineering", "manufacturer", "tagro_policy", "learned_observation", "human"],
+            "properties": {
+              "engineering": {"type": "array", "items": {"type": "string"}},
+              "manufacturer": {"type": "array", "items": {"type": "string"}},
+              "tagro_policy": {"type": "array", "items": {"type": "string"}},
+              "learned_observation": {"type": "array", "items": {"type": "string"}},
+              "human": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "consequences": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Known or explicitly unknown consequences across cost/time/labour/energy/convenience/future expansion. Do not invent numeric consequences."
+          },
+          "source_refs": {"type": "array", "items": {"type": "string"}},
+          "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+        }
+      }
+    }
+  }
+}
