@@ -18,23 +18,45 @@ export const PRODUCTS: any[] = [
   acurainOpal, jainFogger, jBubblerPc, acuMister
 ];
 
+function productName(p: any) {
+  return p.name ?? p.official_name ?? p.id ?? "Unnamed product record";
+}
+
+function evidenceState(p: any) {
+  if (p.evidence_state) return p.evidence_state;
+  if (p.source?.manufacturer_pdf_verified === true) return "manufacturer_document";
+  return "unknown";
+}
+
+function comparisonTags(p: any) {
+  if (Array.isArray(p.generic_comparison_tags) && p.generic_comparison_tags.length) return p.generic_comparison_tags;
+  const category = String(p.category || "").toLowerCase();
+  const tags = new Set<string>();
+  if (/emitter|drip/.test(category)) tags.add("dripper");
+  if (/pressure_compensating|_pc_/.test(category)) tags.add("pressure_compensating_emitter");
+  if (/jet/.test(category)) tags.add("micro_jet");
+  return [...tags];
+}
+
 export const PRODUCT_INDEX = PRODUCTS.map((p: any) => ({
-  name: p.name,
+  name: productName(p),
   manufacturer: p.manufacturer,
   category: p.category,
-  generic_comparison_tags: p.generic_comparison_tags ?? [],
-  evidence_state: p.evidence_state ?? "unknown"
+  generic_comparison_tags: comparisonTags(p),
+  evidence_state: evidenceState(p)
 }));
 
 export function searchableProductText(p: any) {
   return [
-    p.name,
+    productName(p),
     p.category,
-    ...(p.generic_comparison_tags ?? []),
+    ...comparisonTags(p),
     ...(p.application?.manufacturer_examples ?? []),
     ...(p.application?.useful_when_considering ?? []),
     ...(p.design_adviser_hooks?.consider_when ?? []),
-    ...(p.design_adviser_hooks?.ask_or_compare ?? [])
+    ...(p.design_adviser_hooks?.ask_or_compare ?? []),
+    ...(p.manufacturer_use_guidance ?? []),
+    ...(p.tagro_reasoning_hooks ?? [])
   ].join(" ").toLowerCase();
 }
 
