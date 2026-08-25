@@ -13,9 +13,15 @@ const pageErrors = [];
 page.on('pageerror', error => pageErrors.push(error.message));
 
 try {
-  // Information: edit, save, reload.
+  // Information: use the visible progressive path, edit, save, reload.
   await page.goto(`${base}/info.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.tagro-appshell');
+  const customerToggle = page.getByRole('button', { name: 'Customer details', exact: true });
+  if (await customerToggle.count()) await customerToggle.click();
+  await page.waitForFunction(() => {
+    const el = document.getElementById('customerName');
+    return !!el && !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  });
   await page.fill('#customerName', 'Functional Test Farm');
   await page.fill('#customerLocation', 'Karavaloor');
   await page.locator('.plot-card').first().locator('[data-field="crop"]').fill('Pepper');
