@@ -13,9 +13,9 @@ const PAGE = {
   materials:{label:'Materials'}
 };
 const ORDER = ['information','field','drawing','adviser','design','materials'];
+let lastShellHeight = null;
 
-/* A bare/root index is not a page choice. Start at project information.
-   Preserve explicit deep links to Adviser, Design and Materials. */
+/* Browser fallback only. The Worker now serves Information at bare root before UI render. */
 if(pageType==='index'){
   const requested=(location.hash||'').replace('#','').toLowerCase();
   if(requested==='field'||requested==='drawing'){
@@ -174,6 +174,15 @@ function renderIndexTools(ribbon,surface){
   if(surface==='materials') ribbon.append(appendAll(group('MATERIALS'),[button('Products',()=>{location.href='./info.html#products'},{primary:true})]));
 }
 
+function notifyLayoutChange(height){
+  if(pageType!=='workbench' || lastShellHeight===height) return;
+  lastShellHeight=height;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    window.dispatchEvent(new Event('resize'));
+    window.dispatchEvent(new CustomEvent('tagro:shell-layout',{detail:{height}}));
+  }));
+}
+
 function renderRibbon(){
   const ribbon=$('#tagroShellRibbon');
   if(!ribbon)return;
@@ -190,6 +199,7 @@ function renderRibbon(){
   if(document.documentElement.style.getPropertyValue('--tagro-shell-height')!==height){
     document.documentElement.style.setProperty('--tagro-shell-height',height);
   }
+  notifyLayoutChange(height);
 }
 
 function suppressForeignControls(surface){
@@ -215,7 +225,13 @@ function syncJob(){
 function syncSave(){
   const out=$('#tagroShellSave');if(!out)return;
   let src=null,mode='neutral',text='Job active',title='Current job';
-  if(pageType==='info')src=$('#saveState');else if(pageType==='workbench')src=$('#tagroSaveIndicator');
+  if(pageType==='info') src=$('#saveState');
+  else if(pageType==='workbench') src=$('#tagroSaveIndicator');
+  else {
+    mode='local';
+    text='Local job';
+    title='Project information and canonical field geometry remain stored with this local job.';
+  }
   if(src){text=src.textContent?.trim()||'Saved locally';mode=src.dataset?.mode||'local';title=src.title||text}
   setText(out,text);
   setAttr(out,'title',title);
@@ -247,7 +263,7 @@ if(pageType==='workbench'){
 
 window.addEventListener('tagro:job-info-change',()=>{syncJob();syncSave()});
 
-/* Event-driven save indicator updates. No timer/polling: avoid continuous repaint. */
+/* Event-driven save indicator updates. No timer/polling. */
 const saveSource=pageType==='info' ? $('#saveState') : pageType==='workbench' ? $('#tagroSaveIndicator') : null;
 if(saveSource){
   new MutationObserver(()=>requestAnimationFrame(syncSave)).observe(saveSource,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['data-mode','title']});
