@@ -10,6 +10,7 @@ on:
       - 'test/environment-v1-smoke.mjs'
       - 'test/environment-v1-functional.mjs'
       - 'test/environment-v1-production-gate.mjs'
+      - 'test/environment-v1-dependency-failure.mjs'
       - '.github/workflows/environment-v1-regression.yml'
   workflow_dispatch:
 
@@ -55,6 +56,9 @@ jobs:
 
       - name: Run production triple-pass gate
         run: node test/environment-v1-production-gate.mjs
+
+      - name: Run deliberate dependency failure gate
+        run: node test/environment-v1-dependency-failure.mjs
 
       - name: Upload browser evidence
         if: always()
