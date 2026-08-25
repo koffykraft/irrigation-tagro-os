@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#f4f4f0">
 <title>TAGRO Irrigation · Explore & Plan</title>
 <link rel="stylesheet" href="./info.css">
+<link rel="stylesheet" href="./product-deck.css">
 </head>
 <body>
 <div class="page">
@@ -123,12 +124,24 @@
       <div class="note"><b>From design to sale</b><br>A user may request a quote for all materials, only selected items, installation, or merely save the design. Buying is a continuation of the job, not a requirement for using the design tools.</div>
     </div>
   </section>
+
+  <section class="section product-section" id="jainProducts">
+    <header class="section-head"><div><span class="eyebrow">JAIN PRODUCT EXPLORER</span><h2>See what the choices actually are.</h2><p>Manufacturer-backed facts, real product imagery and plain-language trade-offs. A product you like becomes a consideration for this job — never an automatic engineering selection.</p></div></header>
+    <div class="section-body">
+      <div class="product-deck-banner"><b>First visual set: online emitters</b><span>More Jain micro/mini sprinklers, jets, bubblers, filters, dosing and pipe products will join this same deck from the media library.</span></div>
+      <div id="productDeck" class="product-deck" aria-live="polite"></div>
+      <div id="productCompare" class="product-compare"></div>
+      <p class="product-source-note">Images are from the Jain product media library. Technical facts shown here come from mapped Jain manufacturer documents. Price and stock are deliberately absent until a verified TAGRO/BUSY commercial source is connected.</p>
+    </div>
+  </section>
 </main>
 <footer class="footerbar"><span id="footerStatus" class="status">Optional information · local-first job</span><button id="footerSave" class="ghost" type="button">Save</button><a class="secondary" href="./workbench.html">FIELD / DRAWING</a><a class="primary" href="./index.html#adviser">Continue with TAGRO</a></footer>
 </div>
 <script src="./environment-learning.js"></script>
 <script src="./spatial-store.js"></script>
 <script src="./job-info.js"></script>
+<script src="./product-media-sources.js"></script>
 <script src="./info.js"></script>
+<script src="./product-deck.js"></script>
 </body>
 </html>
