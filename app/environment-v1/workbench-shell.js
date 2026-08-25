@@ -52,6 +52,16 @@ function readJson(key, fallback = null) {
   }
 }
 
+function writeJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    setSaveState('offline', 'Not saved on device', String(error?.message || error));
+    return false;
+  }
+}
+
 function readConfig() {
   const saved = readJson(configKey, {});
   return {
@@ -86,7 +96,7 @@ function writeConfig(next = config) {
     job_id: jobId,
     updated_at: new Date().toISOString()
   };
-  localStorage.setItem(configKey, JSON.stringify(config));
+  writeJson(configKey, config);
   dispatchComposition();
   renderComposition();
   scheduleCloudSave();
@@ -128,21 +138,54 @@ function cloudRecord() {
 }
 
 function writeCloudRecord(value) {
-  localStorage.setItem(cloudKey, JSON.stringify(value));
+  return writeJson(cloudKey, value);
 }
 
-function localRevision() {
-  return Number(store.snapshot()?.revision || 0);
+function informationState() {
+  try {
+    return window.TAGROJobInfo?.read?.(jobId) || null;
+  } catch {
+    return null;
+  }
+}
+
+function learningState() {
+  try {
+    return window.TAGROLearning?.context?.(jobId, 50) || null;
+  } catch {
+    return null;
+  }
+}
+
+function localStamp() {
+  const spatial = store.snapshot();
+  const info = informationState();
+  const learning = learningState();
+  return JSON.stringify({
+    spatial_revision: Number(spatial?.revision || 0),
+    information_revision: Number(info?.revision || 0),
+    information_updated_at: info?.updated_at || null,
+    composition_updated_at: config?.updated_at || null,
+    learning_last: learning?.entries?.at?.(-1)?.evidence_id || null,
+    learning_count: Array.isArray(learning?.entries) ? learning.entries.length : 0
+  });
 }
 
 function jobEnvelope() {
   return {
-    contract: 'tagro-irrigation-job-envelope-v1',
+    contract: 'tagro-irrigation-job-envelope-v2',
     local_job_id: jobId,
+    information: informationState(),
     spatial: store.snapshot(),
     composition: clone(config),
-    learning: window.TAGROLearning?.context?.(jobId, 50) || null,
-    saved_from: 'workbench-shell-v1',
+    learning: learningState(),
+    rules: {
+      one_job_one_truth: true,
+      information_unknowns_remain_unknown: true,
+      canonical_geometry_authority: 'spatial',
+      proposal_state_does_not_equal_accepted_design: true
+    },
+    saved_from: 'workbench-shell-v2',
     saved_at: new Date().toISOString()
   };
 }
@@ -157,13 +200,23 @@ function setSaveState(mode, text, detail = '') {
   }
 }
 
+function localStorageIsHealthy() {
+  const state = store.persistence?.();
+  return !state || state.ok !== false;
+}
+
 function renderLocalSave() {
-  const remote = cloudRecord();
   if (saveState.mode === 'syncing' || saveState.mode === 'conflict') return;
-  if (remote?.state_version != null && remote?.last_synced_local_revision === localRevision()) {
-    setSaveState('cloud', 'Cloud saved', 'This job is saved locally and the latest cloud version is aligned.');
+  if (!localStorageIsHealthy()) {
+    setSaveState('offline', 'Not saved on device', 'Browser storage failed. The current session may still contain the work, but persistence is not confirmed.');
+    return;
+  }
+  const remote = cloudRecord();
+  const stamp = localStamp();
+  if (remote?.state_version != null && remote?.last_synced_local_stamp === stamp) {
+    setSaveState('cloud', 'Cloud saved', 'The complete job envelope is saved locally and the latest cloud version is aligned.');
   } else {
-    setSaveState('local', 'Saved locally', persistenceBound ? 'Cloud synchronization is pending.' : 'Saved on this device. Cloud saving is not currently confirmed.');
+    setSaveState('local', 'Saved locally', persistenceBound ? 'The complete job is saved on this device; cloud synchronization is pending.' : 'Saved on this device. Cloud saving is not currently confirmed.');
   }
 }
 
@@ -193,7 +246,7 @@ async function ensureCloudJob() {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      title: 'TAGRO Irrigation Job',
+      title: informationState()?.customer?.name || 'TAGRO Irrigation Job',
       maturity: 'preliminary',
       state: jobEnvelope()
     })
@@ -209,7 +262,7 @@ async function ensureCloudJob() {
     job_id: data.job_id,
     access_token: data.access_token,
     state_version: Number(data.state_version || 0),
-    last_synced_local_revision: localRevision(),
+    last_synced_local_stamp: localStamp(),
     created_at: new Date().toISOString()
   };
   writeCloudRecord(record);
@@ -218,12 +271,16 @@ async function ensureCloudJob() {
 
 async function saveCloudNow() {
   if (document.visibilityState === 'hidden' && !cloudRecord()) return;
-  setSaveState('syncing', 'Saving…', 'Saving the current job.');
+  if (!localStorageIsHealthy()) {
+    setSaveState('offline', 'Not saved on device', 'Browser storage failed, so cloud sync is not being represented as a safe local save.');
+    return { ok: false, local_storage_failed: true };
+  }
+  setSaveState('syncing', 'Saving…', 'Saving the complete current job.');
 
   try {
     const remote = await ensureCloudJob();
     if (!remote) {
-      setSaveState('local', 'Saved locally', 'Cloud saving is not available; the job remains saved on this device.');
+      setSaveState('local', 'Saved locally', 'Cloud saving is not available; the complete job remains saved on this device.');
       return { ok: false, local_only: true };
     }
 
@@ -255,11 +312,11 @@ async function saveCloudNow() {
     const next = {
       ...remote,
       state_version: Number(data.state_version || remote.state_version || 0),
-      last_synced_local_revision: localRevision(),
+      last_synced_local_stamp: localStamp(),
       last_synced_at: new Date().toISOString()
     };
     writeCloudRecord(next);
-    setSaveState('cloud', 'Cloud saved', 'This job is saved locally and in the configured cloud job store.');
+    setSaveState('cloud', 'Cloud saved', 'Information, canonical geometry, composition and job-local learning are aligned with the configured cloud job store.');
     return { ok: true, data };
   } catch (error) {
     setSaveState('offline', 'Sync pending', String(error?.message || error));
@@ -382,8 +439,13 @@ function renderComposition() {
 }
 
 window.addEventListener('tagro:spatial-change', scheduleCloudSave);
+window.addEventListener('tagro:job-info-change', scheduleCloudSave);
+window.addEventListener('tagro:spatial-save-error', event => {
+  setSaveState('offline', 'Not saved on device', event?.detail?.error || 'Browser storage failed.');
+});
+window.addEventListener('tagro:spatial-save-ok', renderLocalSave);
 window.addEventListener('online', () => scheduleCloudSave());
-window.addEventListener('offline', () => setSaveState('offline', 'Offline · Saved locally', 'Network unavailable. Work remains saved on this device.'));
+window.addEventListener('offline', () => setSaveState('offline', 'Offline · Saved locally', 'Network unavailable. Work remains saved on this device if browser storage is healthy.'));
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') renderLocalSave();
 });
@@ -397,6 +459,7 @@ window.TAGROComposition = Object.freeze({
   setMeasurementDisplay,
   setSurfaceVisible,
   setToolVisible,
+  envelope: () => clone(jobEnvelope()),
   saveCloudNow,
   persistence: () => ({ bound: persistenceBound, record: clone(cloudRecord()), state: clone(saveState) })
 });
