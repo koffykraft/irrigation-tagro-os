@@ -1,0 +1,61 @@
+name: TAGRO Irrigation Environment Regression
+
+on:
+  push:
+    branches:
+      - iteration-05-usable-product
+    paths:
+      - 'app/environment-v1/**'
+      - 'test/environment-v1-smoke.mjs'
+      - '.github/workflows/environment-v1-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start environment static server
+        run: |
+          python3 -m http.server 4173 --directory app/environment-v1 > /tmp/tagro-environment-http.log 2>&1 &
+          echo $! > /tmp/tagro-environment-http.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/info.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/tagro-environment-http.log
+          exit 1
+
+      - name: Run six-surface browser gate
+        run: node test/environment-v1-smoke.mjs
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: environment-v1-browser-evidence
+          path: test-artifacts/environment-v1
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Show local server log on failure
+        if: failure()
+        run: cat /tmp/tagro-environment-http.log || true
