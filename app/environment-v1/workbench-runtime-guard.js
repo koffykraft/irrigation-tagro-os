@@ -7,6 +7,15 @@
      from aborting map initialization without creating a second selection implementation. */
   if (typeof window.updateInspector !== 'function') window.updateInspector = () => {};
 
+  /* The current Workbench layout functions call lineCoords() but the generated bundle omitted the helper.
+     Define the single expected geometry adapter here so Layout Laterals, spacing checks and layout preview
+     can use canonical LineString coordinates without inventing any geometry. */
+  if (typeof window.lineCoords !== 'function') {
+    window.lineCoords = object => object?.geometry?.type === 'LineString'
+      ? (object.geometry.coordinates || [])
+      : [];
+  }
+
   const missing = [];
   if (!window.L) missing.push('Leaflet map library');
   if (window.L && !window.L.PM) missing.push('Leaflet-Geoman drawing library');
@@ -17,7 +26,10 @@
     missing: [...missing],
     leaflet: window.L?.version || null,
     geoman: window.L?.PM?.version || null,
-    compatibility_hooks: ['updateInspector -> current updateSelectionUI path']
+    compatibility_hooks: [
+      'updateInspector -> current updateSelectionUI path',
+      'lineCoords -> canonical LineString coordinates'
+    ]
   };
 
   if (ok) return;
