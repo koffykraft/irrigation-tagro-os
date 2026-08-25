@@ -50,6 +50,17 @@ function jobContext(){
   }catch{return {title:'New irrigation job',detail:'Current job'}}
 }
 
+function setText(node,value){
+  if(!node)return;
+  const next=String(value ?? '');
+  if(node.textContent!==next) node.textContent=next;
+}
+function setAttr(node,name,value){
+  if(!node)return;
+  const next=String(value ?? '');
+  if(node.getAttribute(name)!==next) node.setAttribute(name,next);
+}
+
 const shell=document.createElement('header');
 shell.className='tagro-appshell';
 shell.setAttribute('role','banner');
@@ -175,7 +186,10 @@ function renderRibbon(){
   ribbon.hidden=!hasTools;
   shell.classList.toggle('has-ribbon',hasTools);
   document.body.classList.toggle('tagro-shell-has-ribbon',hasTools);
-  document.documentElement.style.setProperty('--tagro-shell-height',hasTools?'86px':'50px');
+  const height=hasTools?'86px':'50px';
+  if(document.documentElement.style.getPropertyValue('--tagro-shell-height')!==height){
+    document.documentElement.style.setProperty('--tagro-shell-height',height);
+  }
 }
 
 function suppressForeignControls(surface){
@@ -190,16 +204,22 @@ function syncNav(){
   const surface=currentSurface();
   suppressForeignControls(surface);
   document.querySelectorAll('.tagro-shell-tab').forEach(b=>b.classList.toggle('active',b.dataset.shellPage===surface));
-  document.title=`TAGRO Irrigation · ${PAGE[surface].label}`;
+  const title=`TAGRO Irrigation · ${PAGE[surface].label}`;
+  if(document.title!==title) document.title=title;
 }
-function syncJob(){const j=jobContext();$('#tagroShellJob').textContent=j.title;$('#tagroShellJobDetail').textContent=j.detail}
+function syncJob(){
+  const j=jobContext();
+  setText($('#tagroShellJob'),j.title);
+  setText($('#tagroShellJobDetail'),j.detail);
+}
 function syncSave(){
   const out=$('#tagroShellSave');if(!out)return;
-  let src=null,mode='neutral';
+  let src=null,mode='neutral',text='Job active',title='Current job';
   if(pageType==='info')src=$('#saveState');else if(pageType==='workbench')src=$('#tagroSaveIndicator');
-  if(src){out.textContent=src.textContent?.trim()||'Saved locally';mode=src.dataset?.mode||'local';out.title=src.title||out.textContent}
-  else{out.textContent='Job active';out.title='Current job';mode='neutral'}
-  out.dataset.mode=mode;
+  if(src){text=src.textContent?.trim()||'Saved locally';mode=src.dataset?.mode||'local';title=src.title||text}
+  setText(out,text);
+  setAttr(out,'title',title);
+  if(out.dataset.mode!==mode) out.dataset.mode=mode;
 }
 function syncAll(){syncNav();syncJob();syncSave();renderRibbon()}
 
@@ -224,6 +244,12 @@ if(pageType==='workbench'){
   const app=$('#app');
   if(app)new MutationObserver(()=>requestAnimationFrame(syncAll)).observe(app,{attributes:true,attributeFilter:['data-surface']});
 }
+
 window.addEventListener('tagro:job-info-change',()=>{syncJob();syncSave()});
-setInterval(()=>{syncJob();syncSave()},1200);
+
+/* Event-driven save indicator updates. No timer/polling: avoid continuous repaint. */
+const saveSource=pageType==='info' ? $('#saveState') : pageType==='workbench' ? $('#tagroSaveIndicator') : null;
+if(saveSource){
+  new MutationObserver(()=>requestAnimationFrame(syncSave)).observe(saveSource,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['data-mode','title']});
+}
 })();
