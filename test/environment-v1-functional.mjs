@@ -9,12 +9,24 @@ function assert(condition, message) {
 async function selectCanonicalObject(page, id) {
   const objects = page.locator('.tagro-existing');
   const count = await objects.count();
+  const seen = [];
   for (let index = 0; index < count; index += 1) {
-    await objects.nth(index).click({ force: true });
+    await objects.nth(index).evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      element.dispatchEvent(new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height / 2
+      }));
+    });
+    await page.waitForTimeout(25);
     const name = (await page.locator('#selectionName').textContent().catch(() => ''))?.trim() || '';
+    seen.push(name || '(no selection)');
     if (name === id || name.startsWith(`${id} ·`)) return;
   }
-  throw new Error(`Field: could not select ${id} through rendered map objects`);
+  throw new Error(`Field: could not select ${id} through rendered map objects; inspector saw ${seen.join(' | ')}`);
 }
 
 const browser = await chromium.launch({ headless: true });
