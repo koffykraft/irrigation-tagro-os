@@ -7,6 +7,7 @@
   const R = 6371008.8;
   const PREVIEW_PREFIX = "tagro.irrigation.spatial.preview.v1";
   const EPS = 1e-9;
+  let volatilePreview = null;
 
   const clone = value => JSON.parse(JSON.stringify(value));
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -16,7 +17,14 @@
   }
 
   function savePreview(value) {
-    localStorage.setItem(previewKey(), JSON.stringify(value));
+    volatilePreview = clone(value);
+    try {
+      localStorage.setItem(previewKey(), JSON.stringify(value));
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent("tagro:spatial-preview-save-error", {
+        detail: { error: String(error?.message || error) }
+      }));
+    }
     window.dispatchEvent(new CustomEvent("tagro:spatial-preview-change", { detail: clone(value) }));
     return value;
   }
@@ -24,14 +32,17 @@
   function current() {
     try {
       const parsed = JSON.parse(localStorage.getItem(previewKey()) || "null");
-      return parsed?.contract === "tagro-spatial-proposal-preview-v1" ? parsed : null;
-    } catch {
-      return null;
-    }
+      if (parsed?.contract === "tagro-spatial-proposal-preview-v1") {
+        volatilePreview = clone(parsed);
+        return parsed;
+      }
+    } catch {}
+    return volatilePreview?.contract === "tagro-spatial-proposal-preview-v1" ? clone(volatilePreview) : null;
   }
 
   function clear() {
-    localStorage.removeItem(previewKey());
+    volatilePreview = null;
+    try { localStorage.removeItem(previewKey()); } catch {}
     window.dispatchEvent(new CustomEvent("tagro:spatial-preview-change", { detail: null }));
   }
 
@@ -228,16 +239,27 @@
   function accept() {
     const active = current();
     if (!active?.objects?.length) return { ok: false, reason: "no_active_preview" };
-    const created = active.objects.map(spec => store.addObject(
-      spec.kind,
-      spec.geometry,
-      {
-        ...(spec.properties || {}),
-        accepted_from_proposal: active.proposal?.proposal_id || null,
-        acceptance_scope: "geometry_only"
-      },
-      "accepted"
-    ));
+    const created = active.objects.map(spec => {
+      const parentId = spec.properties?.generated_from || active.anchor_id || null;
+      const needsNetworkParent = ["submain", "lateral", "device"].includes(spec.kind) && parentId;
+      return store.addObject(
+        spec.kind,
+        spec.geometry,
+        {
+          ...(spec.properties || {}),
+          ...(needsNetworkParent ? {
+            network: {
+              ...(spec.properties?.network || {}),
+              parent_id: parentId,
+              parent_source: "accepted_spatial_proposal"
+            }
+          } : {}),
+          accepted_from_proposal: active.proposal?.proposal_id || null,
+          acceptance_scope: "geometry_only"
+        },
+        "accepted"
+      );
+    });
 
     if (window.TAGROLearning?.recordProposalDecision && active.proposal) {
       window.TAGROLearning.recordProposalDecision(
