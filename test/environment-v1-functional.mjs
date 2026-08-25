@@ -6,6 +6,17 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function selectCanonicalObject(page, id) {
+  const objects = page.locator('.tagro-existing');
+  const count = await objects.count();
+  for (let index = 0; index < count; index += 1) {
+    await objects.nth(index).click({ force: true });
+    const name = (await page.locator('#selectionName').textContent().catch(() => ''))?.trim() || '';
+    if (name === id || name.startsWith(`${id} ·`)) return;
+  }
+  throw new Error(`Field: could not select ${id} through rendered map objects`);
+}
+
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await context.newPage();
@@ -84,15 +95,13 @@ try {
   assert(await page.evaluate(() => window.TAGROSpatial.snapshot().objects.length) === 5, 'Field: canonical sample did not persist through reload');
 
   // Boundary: selection, Details, duplicate, delete.
-  let objects = page.locator('.tagro-existing');
-  await objects.nth(0).click({ force:true });
+  await selectCanonicalObject(page, 'B1');
   await page.waitForFunction(() => document.getElementById('inspector')?.classList.contains('show'));
   await page.click('#labelSelected');
   await page.waitForFunction(() => document.getElementById('propertyPanel')?.classList.contains('show'));
   await page.fill('#propName', 'Edited boundary');
   await page.click('#saveProperties');
   await page.waitForFunction(() => window.TAGROSpatial.snapshot().objects.find(o => o.id === 'B1')?.properties?.name === 'Edited boundary');
-  await page.click('#closeProperties');
 
   const countBeforeDuplicate = await page.evaluate(() => window.TAGROSpatial.snapshot().objects.length);
   await page.click('#duplicateSelected');
@@ -101,8 +110,7 @@ try {
   await page.waitForFunction(n => window.TAGROSpatial.snapshot().objects.length === n, countBeforeDuplicate);
 
   // Main: move, rotate and connection panel.
-  objects = page.locator('.tagro-existing');
-  await objects.nth(1).click({ force:true });
+  await selectCanonicalObject(page, 'M1');
   const mainBefore = await page.evaluate(() => JSON.stringify(window.TAGROSpatial.snapshot().objects.find(o => o.id === 'M1')?.geometry?.coordinates));
   await page.click('#moveSelected');
   await page.waitForFunction(() => document.getElementById('manipPanel')?.classList.contains('show'));
@@ -115,15 +123,13 @@ try {
   await page.click('#closeConnect');
 
   // Submain: Layout control must open.
-  objects = page.locator('.tagro-existing');
-  await objects.nth(2).click({ force:true });
+  await selectCanonicalObject(page, 'S1');
   await page.click('#layoutSelected');
   await page.waitForFunction(() => document.getElementById('layoutPanel')?.classList.contains('show'));
   await page.click('#closeLayout');
 
   // Lateral: emitter control and same-type multi-select.
-  objects = page.locator('.tagro-existing');
-  await objects.nth(3).click({ force:true });
+  await selectCanonicalObject(page, 'L1');
   await page.click('#emitterSelected');
   await page.waitForFunction(() => document.getElementById('emitterPanel')?.classList.contains('show'));
   await page.fill('#emitSpacing', '3');
