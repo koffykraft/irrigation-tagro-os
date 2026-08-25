@@ -6,6 +6,7 @@
 
   const $ = selector => document.querySelector(selector);
   const R = 6371008.8;
+  let refreshQueued = false;
 
   function haversineMeters(a, b) {
     const toRad = value => value * Math.PI / 180;
@@ -28,7 +29,8 @@
   function canonical() {
     const state = store.snapshot();
     const objects = Array.isArray(state.objects) ? state.objects : [];
-    return { state, objects };
+    const relationships = Array.isArray(state.relationships) ? state.relationships : [];
+    return { state, objects, relationships };
   }
 
   function count(objects, kind) {
@@ -61,16 +63,36 @@
     }[character]));
   }
 
+  function networkIntegrity(objects, relationships) {
+    const parentRelations = relationships.filter(rel => rel?.role === "network_parent" && rel?.type === "feeds");
+    const parentByChild = new Map(parentRelations.map(rel => [rel.to, rel.from]));
+    const networkKinds = new Set(["pump", "main", "submain", "lateral", "device"]);
+    const requiresParent = object => {
+      if (!networkKinds.has(object.kind)) return false;
+      if (object.kind === "pump") return false;
+      return true;
+    };
+    const unresolved = objects
+      .filter(requiresParent)
+      .filter(object => !parentByChild.has(object.id))
+      .map(object => object.id);
+    return { parentRelations, unresolved };
+  }
+
   async function enhanceDesign() {
     const panel = document.querySelector('[data-surface-panel="design"]');
     if (!panel?.classList.contains("is-active")) return;
-    const { state, objects } = canonical();
-    if (!objects.length) return;
+    const { state, objects, relationships } = canonical();
+    if (!objects.length) {
+      delete panel.dataset.canonicalProjection;
+      return;
+    }
 
     const main = runs(objects, "main");
     const submain = runs(objects, "submain");
     const lateral = runs(objects, "lateral");
     const plantsDevices = count(objects, "plant") + count(objects, "device");
+    const network = networkIntegrity(objects, relationships);
 
     const summary = $("#networkSummary");
     if (summary) {
@@ -102,6 +124,7 @@
       const rows = [
         ["Geometry", `Canonical FIELD/DRAWING · revision ${state.revision}`],
         ["Measurements", measuredRuns.length ? `${measuredRuns.length} real-coordinate run${measuredRuns.length === 1 ? "" : "s"}` : "No pipe run measured yet"],
+        ["Network ties", `${network.parentRelations.length} explicit parent connection${network.parentRelations.length === 1 ? "" : "s"}${network.unresolved.length ? ` · ${network.unresolved.length} unresolved` : ""}`],
         ["Engineering", engineText],
         ["Hydraulic status", measuredRuns.length ? "Lengths available · PASS/FAIL still waits for the other required inputs" : "No PASS/FAIL issued"],
         ["AI geometry", preview?.objects?.length ? `${preview.objects.length} proposed object${preview.objects.length === 1 ? "" : "s"} · not accepted` : "No active real-field preview"]
@@ -112,12 +135,14 @@
     const unknowns = [];
     if (!count(objects, "boundary")) unknowns.push("No canonical field boundary is recorded yet. Object-level work can continue, but area-based decisions remain incomplete.");
     if (!count(objects, "water_source")) unknowns.push("Water source has not yet been marked on the canonical field.");
-    if (measuredRuns.length) unknowns.push("Pipe lengths now come from real map coordinates. Diameter, material, discharge, operating groups, pressure/head and elevation still need their own evidence before hydraulic acceptance.");
+    if (network.unresolved.length) unknowns.push(`Network parent is unresolved for: ${network.unresolved.join(", ")}. Geometry touching alone is not treated as a connection.`);
+    if (measuredRuns.length) unknowns.push("Pipe lengths come from real map coordinates. Diameter, material, discharge, operating groups, pressure/head and elevation still need their own evidence before hydraulic acceptance.");
     unknowns.push("Elevation is not yet authoritative in this environment; satellite/visual height must not be treated as a hydraulic head measurement.");
     if (preview?.objects?.length) unknowns.push("An AI-assisted geometry preview is visible on FIELD, but it remains proposed until explicitly accepted.");
 
     const unknownBox = $("#designUnknowns");
     if (unknownBox) unknownBox.innerHTML = unknowns.map(item => `<div class="unknown">${escapeHtml(item)}</div>`).join("");
+    panel.dataset.canonicalProjection = String(state.revision);
   }
 
   function adviserButton(topic) {
@@ -146,8 +171,11 @@
   function enhanceMaterials() {
     const panel = document.querySelector('[data-surface-panel="materials"]');
     if (!panel?.classList.contains("is-active")) return;
-    const { objects } = canonical();
-    if (!objects.length) return;
+    const { state, objects } = canonical();
+    if (!objects.length) {
+      delete panel.dataset.canonicalProjection;
+      return;
+    }
 
     const list = $("#materialsList");
     if (!list) return;
@@ -195,20 +223,51 @@
     }
 
     const productText = $("#productKnowledgeText");
-    if (productText) productText.textContent = "Canonical measured requirements are now available where real pipe geometry exists. Jain and generic products still resolve only after application and engineering requirements are known.";
+    if (productText) productText.textContent = "Canonical measured requirements are available where real pipe geometry exists. Jain and generic products resolve only after application and engineering requirements are known.";
+    panel.dataset.canonicalProjection = String(state.revision);
+  }
+
+  function staleCanonicalProjection() {
+    const { objects } = canonical();
+    if (!objects.length) return false;
+    const design = document.querySelector('[data-surface-panel="design"]');
+    if (design?.classList.contains("is-active")) {
+      const text = $("#engineeringStatus")?.textContent || "";
+      if (!text.includes("Canonical FIELD/DRAWING")) return true;
+    }
+    const materials = document.querySelector('[data-surface-panel="materials"]');
+    if (materials?.classList.contains("is-active")) {
+      const text = $("#productKnowledgeText")?.textContent || "";
+      if (!text.includes("Canonical measured requirements")) return true;
+    }
+    return false;
   }
 
   function refresh() {
-    requestAnimationFrame(() => {
-      void enhanceDesign();
+    if (refreshQueued) return;
+    refreshQueued = true;
+    requestAnimationFrame(async () => {
+      refreshQueued = false;
+      await enhanceDesign();
       enhanceMaterials();
     });
   }
 
   document.addEventListener("click", event => {
-    if (event.target?.closest?.('[data-open-surface="design"],[data-open-surface="materials"]')) setTimeout(refresh, 0);
+    if (event.target?.closest?.('[data-open-surface="design"],[data-open-surface="materials"]')) {
+      setTimeout(refresh, 0);
+      setTimeout(refresh, 300);
+    }
   });
+  window.addEventListener("hashchange", () => setTimeout(refresh, 0));
   window.addEventListener("tagro:spatial-change", refresh);
   window.addEventListener("tagro:spatial-preview-change", refresh);
+
+  const app = $("#app") || document.body;
+  const observer = new MutationObserver(() => {
+    if (staleCanonicalProjection()) refresh();
+  });
+  observer.observe(app, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class", "data-surface"] });
+
   refresh();
 })();
