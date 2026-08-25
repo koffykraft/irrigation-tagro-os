@@ -9,6 +9,7 @@ on:
       - 'app/environment-v1/**'
       - 'test/environment-v1-smoke.mjs'
       - 'test/environment-v1-functional.mjs'
+      - 'test/environment-v1-production-gate.mjs'
       - '.github/workflows/environment-v1-regression.yml'
   workflow_dispatch:
 
@@ -18,7 +19,7 @@ permissions:
 jobs:
   browser-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,12 +53,17 @@ jobs:
       - name: Run functional page-set gate
         run: node test/environment-v1-functional.mjs
 
+      - name: Run production triple-pass gate
+        run: node test/environment-v1-production-gate.mjs
+
       - name: Upload browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: environment-v1-browser-evidence
-          path: test-artifacts/environment-v1
+          path: |
+            test-artifacts/environment-v1
+            test-artifacts/environment-v1-production
           if-no-files-found: warn
           retention-days: 14
 
