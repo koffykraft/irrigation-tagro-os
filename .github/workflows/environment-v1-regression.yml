@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - iteration-05-usable-product
+      - iteration-06-plain-production
     paths:
       - 'app/environment-v1/**'
       - 'test/environment-v1-smoke.mjs'
