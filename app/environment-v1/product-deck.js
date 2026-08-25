@@ -11,7 +11,7 @@
   const products = (registry.products || []).filter(product => product.image_asset && product.pitch);
 
   function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
+    return String(value ?? '').replace(/[&<>'\"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '\"': '&quot;' }[ch]));
   }
 
   function selectedIds() {
@@ -42,8 +42,9 @@
   }
 
   function card(product, selected) {
-    const good = (product.pitch.good_for || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+    const applications = (product.pitch.applications || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
     const facts = (product.pitch.facts || []).map(item => `<span class="product-fact">${escapeHtml(item)}</span>`).join('');
+    const service = product.pitch.service ? `<div class="product-service"><b>Construction / service</b>${escapeHtml(product.pitch.service)}</div>` : '';
     return `<article class="product-card" data-product="${escapeHtml(product.key)}" data-selected="${selected}">
       <div class="product-media"><img src="${escapeHtml(product.image_asset)}" alt="${escapeHtml(product.official_name || product.name)}" loading="lazy"></div>
       <div class="product-copy">
@@ -51,12 +52,12 @@
         <h3 class="product-title">${escapeHtml(product.name)}</h3>
         <p class="product-short">${escapeHtml(product.pitch.short)}</p>
         <div class="product-facts">${facts}</div>
-        <div class="product-good"><b>Worth considering for</b><ul>${good}</ul></div>
-        <div class="product-watch"><b>Do not assume</b>${escapeHtml(product.pitch.watch)}</div>
+        ${applications ? `<div class="product-applications"><b>Manufacturer applications</b><ul>${applications}</ul></div>` : ''}
+        ${service}
         <div class="product-actions">
-          <button class="consider" type="button" data-action="consider" data-active="${selected}">${selected ? 'Considering ✓' : 'Consider for my design'}</button>
-          <button type="button" data-action="ask">Ask TAGRO</button>
-          <button type="button" data-action="field">Try on my field</button>
+          <button class="consider" type="button" data-action="consider" data-active="${selected}">${selected ? 'In this job ✓' : 'Use in this job'}</button>
+          <button type="button" data-action="ask">Product help</button>
+          <button type="button" data-action="field">Try on field</button>
         </div>
       </div>
     </article>`;
@@ -66,12 +67,13 @@
     const heads = products.map(product => `<th>${escapeHtml(product.name)}</th>`).join('');
     const rows = [
       ['Type', 'type'],
-      ['Pressure', 'pressure'],
       ['Discharge', 'discharge'],
-      ['Service', 'service'],
-      ['Terrain / pressure variation', 'terrain']
+      ['Operating pressure', 'pressure'],
+      ['Filtration', 'filtration'],
+      ['Construction / service', 'service'],
+      ['Manufacturer applications', 'applications']
     ].map(([label, key]) => `<tr><th>${label}</th>${products.map(product => `<td>${escapeHtml(product.pitch.compare?.[key] || '—')}</td>`).join('')}</tr>`).join('');
-    compareHost.innerHTML = `<div class="product-compare-title"><b>Quick comparison</b><span>This is product education, not a hydraulic PASS/FAIL or final selection.</span></div><div class="product-table-wrap"><table class="product-table"><thead><tr><th>Compare</th>${heads}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    compareHost.innerHTML = `<div class="product-compare-title"><b>Product specifications</b><span>Jain manufacturer document data</span></div><div class="product-table-wrap"><table class="product-table"><thead><tr><th>Compare</th>${heads}</tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
   function render() {
