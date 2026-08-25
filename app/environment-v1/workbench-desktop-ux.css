@@ -1,0 +1,46 @@
+/* Desktop interaction layer: expose existing canonical tools without replacing domain logic. */
+.desktop-toolstrip,.desktop-selectionstrip{display:none}
+@media(min-width:721px){
+  .selectbar,.multi-chip{display:none!important}
+  .desktop-toolstrip{position:absolute;left:58px;top:10px;z-index:1060;display:flex;align-items:center;gap:5px;max-width:calc(100vw - 430px);height:38px;padding:4px 6px;background:rgba(255,255,255,.96);border:1px solid #d7ddd7;border-radius:11px;box-shadow:0 5px 18px rgba(20,30,24,.13);overflow-x:auto;overflow-y:hidden;scrollbar-width:none;backdrop-filter:blur(8px)}
+  .desktop-toolstrip::-webkit-scrollbar,.desktop-selectionstrip::-webkit-scrollbar{display:none}
+  .desk-group{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+  .desk-group+.desk-group{border-left:1px solid #e2e6e2;padding-left:5px}
+  .desk-group-label{font-size:8px;font-weight:900;letter-spacing:.06em;color:#7a837c;padding:0 2px;user-select:none}
+  .desk-tool,.desk-more{height:28px;border:1px solid transparent;border-radius:7px;background:transparent;padding:0 7px;font-size:9.5px;font-weight:850;color:#283129;white-space:nowrap}
+  .desk-tool:hover,.desk-more:hover{background:#f4f6f2;border-color:#dce1dc}
+  .desk-tool.on{background:#fff0e8;border-color:#efad86;color:#a94c17}
+  .desk-more{background:#f5f6f3;border-color:#dce1dc}
+  .desk-shortcut{font-size:8px;color:#89918b;margin-left:3px;font-weight:700}
+
+  .desktop-selectionstrip{position:absolute;left:58px;top:53px;z-index:1058;display:none;align-items:center;gap:5px;max-width:calc(100vw - 430px);height:40px;padding:4px 6px;background:rgba(23,32,25,.94);color:#fff;border-radius:11px;box-shadow:0 5px 18px rgba(20,30,24,.16);overflow-x:auto;overflow-y:hidden;backdrop-filter:blur(8px)}
+  .desktop-selectionstrip.show{display:flex}
+  .desk-selection-summary{display:flex;align-items:baseline;gap:6px;flex:0 0 auto;padding:0 5px 0 3px;border-right:1px solid rgba(255,255,255,.18)}
+  .desk-selection-summary b{font-size:10.5px;white-space:nowrap}.desk-selection-summary span{font-size:9px;color:#cfd6d0;white-space:nowrap}
+  .desk-selection-action{height:30px;border:1px solid rgba(255,255,255,.2);border-radius:8px;background:rgba(255,255,255,.07);color:#fff;padding:0 8px;font-size:9.5px;font-weight:850;white-space:nowrap}
+  .desk-selection-action:hover{background:rgba(255,255,255,.14)}
+  .desk-selection-action.on{background:#fff;color:#172019;border-color:#fff}
+  .desk-selection-action.primary{background:#ee5a28;border-color:#ee5a28;color:#fff}
+  .desk-selection-action.danger{color:#ffd3c8;border-color:rgba(255,180,160,.35)}
+  .desk-selection-action[hidden]{display:none!important}
+  .desk-selection-hint{font-size:8.5px;color:#bfc8c1;white-space:nowrap;padding:0 4px}
+
+  /* Selection information stays visible but no longer competes with manipulation controls. */
+  .inspector{width:min(265px,calc(100vw - 20px));padding:10px 11px;border-radius:13px}
+  .inspector-head b{font-size:14px;line-height:1.25}.inspector-head span{font-size:10.5px;line-height:1.35;margin-top:2px}
+  .measure{font-size:12px;font-weight:750;margin-top:7px;color:#3f4c43}.object-parent{font-size:10.5px;line-height:1.35;margin-top:4px}
+  .inspector-actions{display:none!important}
+
+  /* Keep the optional ruler below the command bars rather than on top of them. */
+  .measure-panel{left:58px!important;top:101px!important}
+
+  /* Existing edit handles become obvious resize/shape affordances. */
+  .draw-handle{r:8;stroke-width:2.5}
+  .leaflet-marker-icon.marker-icon-middle,.leaflet-marker-icon.marker-icon{filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
+}
+
+@media(max-width:720px){
+  /* Mobile retains the existing touch-first dock until it is tested separately. */
+  .inspector-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .inspector-actions button{width:100%;padding:0 6px;text-align:center;justify-content:center}
+}
