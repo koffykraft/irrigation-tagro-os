@@ -10,10 +10,10 @@
 <body>
 <div class="page">
   <header class="topbar">
-    <a class="back" href="./field-map.html" aria-label="Back to field map">←</a>
-    <div class="title"><b>DRAWING</b><span>Same canonical field objects · engineering projection</span></div>
+    <a class="back" href="./workbench.html?view=drawing" aria-label="Back to current Drawing workbench">←</a>
+    <div class="title"><b>DRAWING</b><span>Compatibility canonical drawing</span></div>
     <div class="controls">
-      <a href="./field-map.html">FIELD</a>
+      <a href="./workbench.html?view=field">Current Field</a>
       <button id="fitButton" type="button">Fit</button>
       <button id="workButton" class="work" type="button">＋</button>
     </div>
@@ -21,7 +21,7 @@
 
   <main class="stage">
     <svg id="canvas" class="canvas" viewBox="0 0 1000 700" role="application" aria-label="Irrigation drawing"></svg>
-    <div id="empty" class="empty"><div><b>No real field geometry yet.</b><span>Open FIELD and mark at least one real location or boundary. DRAWING will then use the same canonical coordinates rather than inventing a scale.</span></div></div>
+    <div id="empty" class="empty"><div><b>No real field geometry yet.</b><span>Open the current Field workbench and mark at least one real location or boundary. This compatibility drawing uses the same canonical coordinates rather than inventing a scale.</span></div></div>
 
     <aside id="workMenu" class="workmenu">
       <div class="workhead"><b>Work on drawing</b><button id="closeWork" type="button">×</button></div>
