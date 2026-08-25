@@ -4,31 +4,79 @@
   const PREFIX = "tagro.irrigation.learning.v1";
   const now = () => new Date().toISOString();
   const randomId = () => (crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`);
+  const volatileEntries = new Map();
+  let volatileJobId = null;
+  let persistenceState = { ok: true, mode: "localStorage", error: null, at: now() };
+
+  function persistenceEvent(ok, error = null) {
+    persistenceState = {
+      ok,
+      mode: ok ? "localStorage" : "memory-fallback",
+      error: error ? String(error?.message || error) : null,
+      at: now()
+    };
+    window.dispatchEvent(new CustomEvent(ok ? "tagro:learning-save-ok" : "tagro:learning-save-error", {
+      detail: { ...persistenceState }
+    }));
+  }
+
+  function safeGet(key) {
+    try { return localStorage.getItem(key); }
+    catch (error) { persistenceEvent(false, error); return null; }
+  }
+
+  function safeSet(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      persistenceEvent(true);
+      return true;
+    } catch (error) {
+      persistenceEvent(false, error);
+      return false;
+    }
+  }
+
+  function safeRemove(key) {
+    try {
+      localStorage.removeItem(key);
+      persistenceEvent(true);
+      return true;
+    } catch (error) {
+      persistenceEvent(false, error);
+      return false;
+    }
+  }
 
   function jobKey(jobId) {
     return `${PREFIX}:${jobId}`;
   }
 
   function ensureJobId(existing) {
-    const id = existing || localStorage.getItem(`${PREFIX}:active-job`) || `job_${randomId()}`;
-    localStorage.setItem(`${PREFIX}:active-job`, id);
+    const id = existing || safeGet(`${PREFIX}:active-job`) || volatileJobId || `job_${randomId()}`;
+    volatileJobId = id;
+    safeSet(`${PREFIX}:active-job`, id);
     return id;
   }
 
   function read(jobId) {
     const id = ensureJobId(jobId);
+    if (volatileEntries.has(id)) return [...volatileEntries.get(id)];
     try {
-      const parsed = JSON.parse(localStorage.getItem(jobKey(id)) || "[]");
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
+      const parsed = JSON.parse(safeGet(jobKey(id)) || "[]");
+      if (Array.isArray(parsed)) {
+        volatileEntries.set(id, [...parsed]);
+        return parsed;
+      }
+    } catch {}
+    return [];
   }
 
   function write(jobId, entries) {
     const id = ensureJobId(jobId);
-    localStorage.setItem(jobKey(id), JSON.stringify(entries));
-    return entries;
+    const copy = Array.isArray(entries) ? [...entries] : [];
+    volatileEntries.set(id, copy);
+    safeSet(jobKey(id), JSON.stringify(copy));
+    return copy;
   }
 
   function append(jobId, input = {}) {
@@ -53,6 +101,7 @@
     const entries = read(id);
     entries.push(entry);
     write(id, entries);
+    window.dispatchEvent(new CustomEvent("tagro:learning-change", { detail: entry }));
     return entry;
   }
 
@@ -104,8 +153,18 @@
 
   function clear(jobId) {
     const id = ensureJobId(jobId);
-    localStorage.removeItem(jobKey(id));
+    volatileEntries.delete(id);
+    safeRemove(jobKey(id));
   }
 
-  window.TAGROLearning = { ensureJobId, read, append, recordProposalDecision, recordPreference, context, clear };
+  window.TAGROLearning = {
+    ensureJobId,
+    read,
+    append,
+    recordProposalDecision,
+    recordPreference,
+    context,
+    clear,
+    persistence: () => ({ ...persistenceState })
+  };
 })();
