@@ -54,6 +54,10 @@
       contract: CONTRACT,
       job_id: jobId,
       revision: 0,
+      audience: {
+        mode: "exploring",
+        current_need: "understand"
+      },
       customer: {
         name: "",
         phone: "",
@@ -106,6 +110,7 @@
     try {
       const parsed = JSON.parse(localStorage.getItem(key(jobId)) || "null");
       if (parsed?.contract === CONTRACT) {
+        parsed.audience = parsed.audience || { mode: "exploring", current_need: "understand" };
         if (!Array.isArray(parsed.plots) || !parsed.plots.length) parsed.plots = [blankPlot(1)];
         return parsed;
       }
@@ -129,6 +134,7 @@
     const next = clone(state);
     next.contract = CONTRACT;
     next.job_id = next.job_id || ensureJobId();
+    next.audience = next.audience || { mode: "exploring", current_need: "understand" };
     next.revision = Number(next.revision || 0) + 1;
     next.updated_at = now();
     event(next, eventType, payload);
@@ -175,12 +181,33 @@
 
   function context(jobId = ensureJobId()) {
     const state = read(jobId);
-    const known = compact(state) || {};
     return {
       contract: CONTRACT,
       job_id: state.job_id,
       evidence_rule: "Optional job information records what was stated or known before/during design. Blank or unknown values remain unknown. Map geometry and deterministic engineering may later supersede approximate dimensions or assumptions.",
-      known
+      known: compact(state) || {}
+    };
+  }
+
+  function designContext(jobId = ensureJobId()) {
+    const state = read(jobId);
+    const designRelevant = {
+      audience: state.audience,
+      need: state.need,
+      locality: {
+        location: state.customer?.location || "",
+        agriculture_office: state.customer?.agriculture_office || ""
+      },
+      water_power: state.water_power,
+      site: state.site,
+      plots: state.plots
+    };
+    return {
+      contract: `${CONTRACT}-design-context`,
+      job_id: state.job_id,
+      privacy_rule: "Customer name, phone, email, postal address and sales reference are deliberately excluded from AI design context.",
+      evidence_rule: "These are stated/known job facts, not calculated engineering results. Unknown remains unknown. Canonical FIELD geometry and deterministic checks outrank approximate inputs when available.",
+      known: compact(designRelevant) || {}
     };
   }
 
@@ -199,6 +226,7 @@
     addPlot,
     removePlot,
     context,
+    designContext,
     clear,
     blankPlot
   };
