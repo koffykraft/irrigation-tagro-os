@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4f4f0">
+<title>TAGRO Irrigation · Explore & Plan</title>
+<link rel="stylesheet" href="./info.css">
+</head>
+<body>
+<div class="page">
+<header class="topbar">
+  <a class="back" href="./workbench.html" aria-label="Back to Workbench">←</a>
+  <div class="brand"><b>TAGRO IRRIGATION</b><span>Explore · understand · design · decide</span></div>
+  <div class="spacer"></div>
+  <span id="saveState" class="save">Saved locally</span>
+  <a class="toplink" href="./workbench.html">FIELD</a>
+  <a class="toplink" href="./index.html">ADVISER</a>
+</header>
+<main class="content">
+  <section class="hero">
+    <article class="hero-card">
+      <span class="eyebrow">OPTIONAL INFORMATION</span>
+      <h1>Start with what you know.</h1>
+      <p>Nothing here is compulsory. Add enough information to make the field design, irrigation choices, materials and cost discussion more useful. Unknown stays unknown; real map measurements and engineering checks can replace early estimates later.</p>
+      <div class="hero-actions"><button id="saveNow" class="primary" type="button">Save information</button><a class="secondary" href="./workbench.html">Open field</a><a class="secondary" href="./index.html#adviser">Ask TAGRO</a></div>
+    </article>
+    <aside class="summary-card"><b>THIS JOB SO FAR</b><div class="summary-grid"><div class="summary-cell"><strong id="knownCount">0</strong><span>known answers</span></div><div class="summary-cell"><strong id="plotCount">1</strong><span>plots / crop areas</span></div><div class="summary-cell"><strong id="spatialCount">0</strong><span>mapped objects</span></div><div class="summary-cell"><strong id="infoRevision">0</strong><span>info revision</span></div></div><p id="unlockText">You can already open FIELD and start drawing. More information simply improves later choices.</p></aside>
+  </section>
+
+  <section class="section">
+    <header class="section-head"><div><h2>What are you here to do?</h2><p>This changes what TAGRO emphasizes, not the underlying job.</p></div></header>
+    <div class="section-body grid two">
+      <label>Using the tool as
+        <select id="audienceMode">
+          <option value="exploring">Just exploring</option>
+          <option value="b2c">Farmer / home / own property</option>
+          <option value="b2b">Dealer / contractor / designer</option>
+          <option value="tagro">TAGRO staff</option>
+        </select>
+      </label>
+      <label>Current need
+        <select id="currentNeed">
+          <option value="understand">Understand irrigation options</option>
+          <option value="new_design">Plan a new system</option>
+          <option value="improve">Improve an existing system</option>
+          <option value="cost">Understand likely cost</option>
+          <option value="materials">Prepare materials / purchase</option>
+          <option value="quote">Prepare customer quote</option>
+        </select>
+      </label>
+      <div class="wide"><label>What would make irrigation worthwhile?</label><div id="purposeChips" class="chips">
+        <label class="chip"><input type="checkbox" value="survival"><span>Keep crop safe in dry periods</span></label>
+        <label class="chip"><input type="checkbox" value="yield"><span>Improve production</span></label>
+        <label class="chip"><input type="checkbox" value="water_saving"><span>Use water better</span></label>
+        <label class="chip"><input type="checkbox" value="labour_saving"><span>Reduce daily labour</span></label>
+        <label class="chip"><input type="checkbox" value="existing_pump"><span>Use equipment I already have</span></label>
+        <label class="chip"><input type="checkbox" value="low_capex"><span>Spend as little as practical</span></label>
+        <label class="chip"><input type="checkbox" value="future_expansion"><span>Easy to expand later</span></label>
+        <label class="chip"><input type="checkbox" value="commercial"><span>Improve farm income</span></label>
+      </div></div>
+      <label class="wide">What matters most / what worries you?<textarea id="priorityNote" placeholder="e.g. water is limited; I cannot spend too much now; daily valve operation must be easy"></textarea></label>
+      <label>Budget thought, if any<input id="budgetNote" placeholder="optional — amount, range, or just 'not decided'"></label>
+      <label>Future expansion<select id="futureExpansion"><option value="unknown">Not decided</option><option value="yes">Likely</option><option value="no">No</option><option value="possible">Maybe</option></select></label>
+    </div>
+  </section>
+
+  <section class="section">
+    <header class="section-head"><div><h2>Identify this job</h2><p>Optional while exploring. Useful when you want to keep a customer/site record, quote, or return later.</p></div></header>
+    <div class="section-body grid">
+      <label>Name<input id="customerName" autocomplete="name"></label>
+      <label>Phone<input id="customerPhone" inputmode="tel" autocomplete="tel"></label>
+      <label>Email<input id="customerEmail" inputmode="email" autocomplete="email"></label>
+      <label>Job / estimate reference<input id="externalReference" placeholder="optional"></label>
+      <label class="wide">Address<textarea id="customerAddress"></textarea></label>
+      <label>Location / locality<input id="customerLocation"></label>
+      <label>Agriculture office / Krishi Bhavan<input id="agricultureOffice"></label>
+    </div>
+  </section>
+
+  <section class="section">
+    <header class="section-head"><div><h2>Water, power & existing equipment</h2><p>These facts often change the practical design more than crop choice alone.</p></div></header>
+    <div class="section-body grid">
+      <label>Water source<select id="sourceType"><option value="unknown">Unknown / not entered</option><option value="open_well">Open well</option><option value="borewell">Borewell</option><option value="pond">Pond</option><option value="river_stream">River / stream</option><option value="tank_ground">Ground tank / sump</option><option value="tank_overhead">Overhead tank</option><option value="canal">Canal</option><option value="other">Other</option></select></label>
+      <label>Power<select id="powerType"><option value="unknown">Unknown</option><option value="electricity">Electricity</option><option value="diesel">Diesel</option><option value="solar">Solar</option><option value="gravity">Gravity only</option><option value="other">Other</option></select></label>
+      <label>Phase<select id="powerPhase"><option value="unknown">Unknown</option><option value="single">Single phase</option><option value="three">Three phase</option><option value="not_applicable">Not applicable</option></select></label>
+      <label>Pump already exists?<select id="pumpExists"><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+      <label>Pump HP<input id="pumpHp" type="number" min="0" step="0.25" placeholder="if known"></label>
+      <label>Pump/model detail<input id="pumpModel" placeholder="or show the label later"></label>
+      <label>Known available head (m)<input id="knownHead" type="number" step="0.1" placeholder="if actually known"></label>
+      <label>Usable irrigation hours/day<input id="operatingHours" type="number" min="0" step="0.25"></label>
+      <label>Water availability<select id="waterAvailability"><option value="unknown">Unknown</option><option value="ample">Generally ample</option><option value="seasonal">Seasonal</option><option value="limited">Limited</option><option value="very_limited">Very limited</option></select></label>
+      <label>Known source yield LPH<input id="knownYield" type="number" min="0" step="1" placeholder="only if measured/known"></label>
+      <label>Storage litres<input id="storageLitres" type="number" min="0" step="1" placeholder="if tank/storage exists"></label>
+      <label>Filter already exists?<select id="filterExisting"><option value="unknown">Unknown</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+      <label class="wide">Water/source notes<textarea id="sourceDescription" placeholder="well depth, tank location, seasonal issue, sand/silt, existing pipe, etc."></textarea></label>
+    </div>
+  </section>
+
+  <section class="section">
+    <header class="section-head"><div><h2>Plots, crops & application intent</h2><p>Add one or several. Early dimensions may be approximate; FIELD geometry will become authoritative when mapped.</p></div><button id="addPlot" class="add-plot" type="button">＋ Add plot</button></header>
+    <div id="plots" class="section-body plots"></div>
+  </section>
+
+  <section class="section">
+    <header class="section-head"><div><h2>Site context</h2><p>Optional facts that affect routing, pressure, labour and long-term usability.</p></div></header>
+    <div class="section-body grid">
+      <label>Soil<select id="soil"><option value="unknown">Unknown</option><option value="sandy">Sandy</option><option value="loam">Loam</option><option value="clay">Clay / heavy</option><option value="laterite">Laterite</option><option value="mixed">Mixed</option><option value="other">Other</option></select></label>
+      <label>Slope<select id="slope"><option value="unknown">Unknown</option><option value="flat">Mostly flat</option><option value="gentle">Gentle slope</option><option value="undulating">Undulating</option><option value="steep">Steep</option></select></label>
+      <label>Known source-to-field distance (m)<input id="sourceToField" type="number" min="0" step="0.1" placeholder="if known"></label>
+      <label>Wind exposure<select id="wind"><option value="unknown">Unknown</option><option value="low">Sheltered / low</option><option value="moderate">Moderate</option><option value="high">Windy</option></select></label>
+      <label class="wide">Access / daily use<textarea id="accessNote" placeholder="paths, gate, house, where valves should be reachable, machinery access"></textarea></label>
+      <label class="wide">Existing irrigation / site notes<textarea id="existingSystemNote" placeholder="existing mains, old laterals, tanks, filters, valves, constraints"></textarea></label>
+    </div>
+  </section>
+
+  <section class="section">
+    <header class="section-head"><div><h2>Explore before deciding</h2><p>Designed for both B2C and B2B use. Education and comparison should remain useful even if you buy elsewhere.</p></div></header>
+    <div class="section-body grid two">
+      <div class="note"><b>Crop & application explorer</b><br>Use crop, spacing, water reality and your purpose to compare drip, inline, micro/mini sprinkler, jet, bubbler, mister/fogger or other suitable application approaches. Product names come after the application need.</div>
+      <div class="note"><b>Benefits & trade-offs</b><br>Show water/labour/runtime implications, crop-use suitability, convenience, expansion and capital cost separately. Monetary benefit must be labelled as an estimate with its evidence/source, never promised as guaranteed return.</div>
+      <div class="note"><b>Transparent comparison</b><br>TAGRO/Jain choices can be compared with generic or external alternatives. The design requirement remains visible so a user can understand what any alternative must satisfy.</div>
+      <div class="note"><b>From design to sale</b><br>A user may request a quote for all materials, only selected items, installation, or merely save the design. Buying is a continuation of the job, not a requirement for using the design tools.</div>
+    </div>
+  </section>
+</main>
+<footer class="footerbar"><span id="footerStatus" class="status">Optional information · local-first job</span><button id="footerSave" class="ghost" type="button">Save</button><a class="secondary" href="./workbench.html">FIELD / DRAWING</a><a class="primary" href="./index.html#adviser">Continue with TAGRO</a></footer>
+</div>
+<script src="./environment-learning.js"></script>
+<script src="./spatial-store.js"></script>
+<script src="./job-info.js"></script>
+<script src="./info.js"></script>
+</body>
+</html>
