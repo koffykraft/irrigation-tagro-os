@@ -4,34 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#ffffff">
-<title>TAGRO Irrigation Workbench</title>
+<title>TAGRO Irrigation · Field / Drawing</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css">
 <link rel="stylesheet" href="./workbench.css">
 <link rel="stylesheet" href="./workbench-v2.css">
+<link rel="stylesheet" href="./workbench-desktop-ux.css">
 </head>
 <body>
 <div class="page">
 <header class="topbar">
-  <a class="back" href="./index.html" aria-label="Back to Irrigation Environment">←</a>
-  <div class="brand"><b>TAGRO IRRIGATION</b><span>Field truth · editable design · engineering evidence</span></div>
+  <a class="back" href="./index.html" aria-label="Back to Irrigation Design">←</a>
+  <div class="brand"><b>TAGRO IRRIGATION</b><span>Irrigation Design</span></div>
   <div class="modes"><button id="fieldMode" class="mode on" type="button">FIELD</button><button id="drawingMode" class="mode" type="button">DRAWING</button></div>
   <div class="spacer"></div>
-  <div id="searchBox" class="search"><input id="searchInput" placeholder="Search or lat,lng"><button id="searchButton" type="button">⌕</button></div>
+  <div id="searchBox" class="search"><input id="searchInput" placeholder="Search place or lat,lng"><button id="searchButton" type="button">⌕</button></div>
   <button id="locateButton" class="iconbtn" type="button" aria-label="Use current location">◎</button>
   <a class="adviser-link" href="./info.html">INFO</a>
   <a class="adviser-link" href="./index.html">ADVISER</a>
-  <button id="workButton" class="workbtn" type="button" aria-label="Open work tools">＋</button>
+  <button id="workButton" class="workbtn" type="button" aria-label="Open all tools">＋</button>
 </header>
 <main id="workspace" class="workspace">
   <section id="fieldSurface" class="surface on"><div id="map"></div></section>
-  <section id="drawingSurface" class="surface drawing-wrap"><svg id="drawingCanvas" class="drawing-canvas" viewBox="0 0 1000 700" role="application" aria-label="Canonical irrigation drawing"></svg><div id="drawingEmpty" class="drawing-empty"><b>FIELD anchors the drawing.</b><span>Locate or draw at least one real object first.</span></div></section>
+  <section id="drawingSurface" class="surface drawing-wrap"><svg id="drawingCanvas" class="drawing-canvas" viewBox="0 0 1000 700" role="application" aria-label="Irrigation design drawing"></svg><div id="drawingEmpty" class="drawing-empty"><b>No field geometry.</b><span>Use Field to locate the site or add an object before working in Drawing.</span></div></section>
 
   <div class="selectbar"><button id="multiToggle" type="button">Multi-select</button><button id="selectSame" type="button">Same type</button></div>
   <div id="multiChip" class="multi-chip"><b id="multiCount">0 selected</b><button id="clearMulti" type="button">Clear</button></div>
 
-  <aside id="toolDock" class="tool-dock" aria-label="Irrigation work tools">
-    <div class="dock-head"><b>Work tools</b><button id="closeTools" type="button">×</button></div>
+  <aside id="toolDock" class="tool-dock" aria-label="Irrigation tools">
+    <div class="dock-head"><b>Tools</b><button id="closeTools" type="button">×</button></div>
     <div class="tool-section-title">FIELD / AREAS</div>
     <div class="tool-grid extended">
       <button type="button" data-tool="select"><span>↖</span>Select</button>
@@ -56,38 +57,38 @@
     <div class="secondary-tools"><button id="measureTool" type="button">↔ Ruler</button><button id="layoutTool" type="button">≡ Layout Laterals</button></div>
   </aside>
 
-  <div id="activeChip" class="active-chip"><b id="activeToolName">Select</b><span id="activeToolHint">Click an object</span><button id="finishTool" type="button">Finish</button><button id="stopTool" class="stop" type="button">Stop</button></div>
+  <div id="activeChip" class="active-chip"><b id="activeToolName">Select</b><span id="activeToolHint">Select an object</span><button id="finishTool" type="button">Finish</button><button id="stopTool" class="stop" type="button">Stop</button></div>
 
   <aside id="inspector" class="inspector" aria-live="polite">
     <div class="inspector-head"><div><b id="selectionName">Object</b><span id="selectionMeta"></span></div><button id="closeInspector" type="button">×</button></div>
     <div id="selectionMeasure" class="measure"></div><div id="selectionParent" class="object-parent"></div>
     <div class="inspector-actions">
       <button id="moveSelected" class="move primary" type="button">Move</button>
-      <button id="editSelected" type="button">Points</button>
+      <button id="editSelected" type="button">Edit shape</button>
       <button id="rotateSelected" class="rotate" type="button">Rotate</button>
       <button id="duplicateSelected" type="button">Duplicate</button>
       <button id="connectSelected" class="connect" type="button">Connect</button>
-      <button id="labelSelected" class="label" type="button">Label</button>
+      <button id="labelSelected" class="label" type="button">Details</button>
       <button id="emitterSelected" type="button">Emitter</button>
       <button id="layoutSelected" type="button">Layout</button>
       <button id="deleteSelected" class="danger" type="button">Delete</button>
     </div>
   </aside>
 
-  <aside id="manipPanel" class="manip-panel"><div class="panel-head"><b>Move / rotate <span id="manipCount"></span></b><button id="closeManip" type="button">×</button></div><div class="panel-note">Move drags the selected object or group. Rotate turns the selected geometry around its centre without changing its length.</div><div class="mini-grid"><label>Rotation angle<input id="rotateAngle" type="number" step="1" value="5"></label><label>Move step<input id="moveStep" type="number" min="0.1" step="0.5" value="1"></label></div><div class="batch-actions"><button data-rotate="-5">↺ 5°</button><button data-rotate="-1">↺ 1°</button><button data-rotate="1">1° ↻</button><button data-rotate="5">5° ↻</button><button id="rotateApply" class="primary">Apply angle</button><button id="alignParallel">Parallel to primary</button></div><div class="batch-actions"><button data-nudge="north">↑</button><button data-nudge="west">←</button><button data-nudge="east">→</button><button data-nudge="south">↓</button><button id="dragMove" class="primary">Drag move</button></div><div class="rotation-preview-note">For a single line, rotate pivots around its midpoint. For a multi-selection, the group rotates together around the group centre.</div></aside>
+  <aside id="manipPanel" class="manip-panel"><div class="panel-head"><b>Move / rotate <span id="manipCount"></span></b><button id="closeManip" type="button">×</button></div><div class="panel-note">Move or rotate the selected object or group.</div><div class="mini-grid"><label>Rotation angle<input id="rotateAngle" type="number" step="1" value="5"></label><label>Move step<input id="moveStep" type="number" min="0.1" step="0.5" value="1"></label></div><div class="batch-actions"><button data-rotate="-5">↺ 5°</button><button data-rotate="-1">↺ 1°</button><button data-rotate="1">1° ↻</button><button data-rotate="5">5° ↻</button><button id="rotateApply" class="primary">Apply angle</button><button id="alignParallel">Parallel to primary</button></div><div class="batch-actions"><button data-nudge="north">↑</button><button data-nudge="west">←</button><button data-nudge="east">→</button><button data-nudge="south">↓</button><button id="dragMove" class="primary">Drag move</button></div><div class="rotation-preview-note">Group rotation uses the centre of the selected objects.</div></aside>
 
-  <aside id="propertyPanel" class="property-panel"><div class="panel-head"><b>Label / describe</b><button id="closeProperties" type="button">×</button></div><div class="panel-note">Stable IDs such as M1 or S2 do not change. Add a human name, block/family and notes.</div><label>Name<input id="propName" type="text" maxlength="80" placeholder="e.g. East coconut block"></label><label>Family / block<input id="propFamily" type="text" maxlength="80" placeholder="optional"></label><label>Crop<input id="propCrop" type="text" maxlength="80" placeholder="optional"></label><label>Notes<textarea id="propNote" maxlength="500" placeholder="field note"></textarea></label><div class="batch-actions"><button id="saveProperties" class="primary">Save to selected</button></div></aside>
+  <aside id="propertyPanel" class="property-panel"><div class="panel-head"><b>Object details</b><button id="closeProperties" type="button">×</button></div><div class="panel-note">The object ID remains unchanged.</div><label>Name<input id="propName" type="text" maxlength="80" placeholder="e.g. East coconut block"></label><label>Family / block<input id="propFamily" type="text" maxlength="80" placeholder="optional"></label><label>Crop<input id="propCrop" type="text" maxlength="80" placeholder="optional"></label><label>Notes<textarea id="propNote" maxlength="500" placeholder="field note"></textarea></label><div class="batch-actions"><button id="saveProperties" class="primary">Save</button></div></aside>
 
-  <aside id="connectPanel" class="connect-panel"><div class="panel-head"><b>Connect / feeds from</b><button id="closeConnect" type="button">×</button></div><div class="panel-note">This records the explicit network parent. Geometry can touch without being assumed connected.</div><label>Parent<select id="parentSelect"></select></label><div class="batch-actions"><button id="applyParent" class="primary">Connect selected</button><button id="clearParent">Clear tie</button></div><div id="connectStatus" class="panel-status"></div></aside>
+  <aside id="connectPanel" class="connect-panel"><div class="panel-head"><b>Network connection</b><button id="closeConnect" type="button">×</button></div><div class="panel-note">Assign the upstream parent for the selected object or objects.</div><label>Parent<select id="parentSelect"></select></label><div class="batch-actions"><button id="applyParent" class="primary">Connect</button><button id="clearParent">Clear connection</button></div><div id="connectStatus" class="panel-status"></div></aside>
 
-  <aside id="emitterPanel" class="emitter-panel"><div class="panel-head"><b>Lateral device / emitter</b><button id="closeEmitter" type="button">×</button></div><div class="panel-note">Apply to one or many selected Laterals. Product lookup/AI may suggest values later; the engineering engine remains authoritative.</div><div class="mini-grid"><label>Type<select id="emitType"><option value="dripper">Dripper / emitter</option><option value="micro-sprinkler">Micro sprinkler</option><option value="mini-sprinkler">Mini sprinkler</option><option value="jet">Jet / spray jet</option><option value="bubbler">Bubbler</option><option value="mister">Mister</option><option value="fogger">Fogger</option><option value="other">Other</option></select></label><label>Spacing m<input id="emitSpacing" type="number" min="0.1" step="0.1" value="10"></label><label>Discharge LPH<input id="emitDischarge" type="number" min="0.1" step="0.1" value="8"></label><label>Nominal head m<input id="emitHead" type="number" min="0.1" step="0.1" value="10"></label></div><label>Product reference<input id="emitProduct" type="text" maxlength="100" placeholder="manual or Jain reference"></label><div class="batch-actions"><button id="applyEmitter" class="primary">Apply to Laterals</button><button id="lookupEmitter">Reference lookup</button></div><div id="emitterStatus" class="panel-status"></div></aside>
+  <aside id="emitterPanel" class="emitter-panel"><div class="panel-head"><b>Emitter / application device</b><button id="closeEmitter" type="button">×</button></div><div class="panel-note">Apply device information to the selected lateral or laterals.</div><div class="mini-grid"><label>Type<select id="emitType"><option value="dripper">Dripper / emitter</option><option value="micro-sprinkler">Micro sprinkler</option><option value="mini-sprinkler">Mini sprinkler</option><option value="jet">Jet / spray jet</option><option value="bubbler">Bubbler</option><option value="mister">Mister</option><option value="fogger">Fogger</option><option value="other">Other</option></select></label><label>Spacing m<input id="emitSpacing" type="number" min="0.1" step="0.1" value="10"></label><label>Discharge LPH<input id="emitDischarge" type="number" min="0.1" step="0.1" value="8"></label><label>Nominal head m<input id="emitHead" type="number" min="0.1" step="0.1" value="10"></label></div><label>Product reference<input id="emitProduct" type="text" maxlength="100" placeholder="optional product reference"></label><div class="batch-actions"><button id="applyEmitter" class="primary">Apply</button><button id="lookupEmitter">Product lookup</button></div><div id="emitterStatus" class="panel-status"></div></aside>
 
-  <aside id="layoutPanel" class="layout-panel"><div class="panel-head"><b>Layout Laterals from <span id="layoutSource">Submain</span></b><button id="closeLayout" type="button">×</button></div><div class="panel-note">Spacing is measured along the selected Submain. Preview first. Created Laterals remain ordinary selectable, movable, rotatable, editable canonical lines.</div><div class="layout-grid"><label>Spacing<input id="layoutSpacing" type="number" min="0.2" step="0.1" value="3"></label><label>Start along Submain<input id="layoutStart" type="number" min="0" step="0.1" value="0"></label><label>End along Submain<input id="layoutEnd" type="number" min="0" step="0.1" placeholder="full length"></label><label>Lateral length<input id="layoutLength" type="number" min="0.5" step="0.5" value="20"></label><label>Bearing<input id="layoutBearing" type="number" min="0" max="359.9" step="0.1" value="90"></label><label>Runs<select id="layoutSide"><option value="one">One direction</option><option value="both">Both directions</option></select></label><label class="wide">Clip to<select id="layoutClip"><option value="">None · free run</option></select></label><label class="wide check"><input id="layoutSkip" type="checkbox" checked> Skip existing lateral feed points</label></div><div class="panel-actions"><button id="flipLayout" type="button">Flip 180°</button><button id="previewLayout" type="button">Preview</button><button id="createLayout" class="primary" type="button" disabled>Create</button><button id="clearLayout" type="button">Clear</button></div><div id="layoutStatus" class="panel-status">Select a Submain, then preview.</div></aside>
+  <aside id="layoutPanel" class="layout-panel"><div class="panel-head"><b>Layout Laterals from <span id="layoutSource">Submain</span></b><button id="closeLayout" type="button">×</button></div><div class="panel-note">Create laterals at a set spacing along the selected submain. Preview before creating.</div><div class="layout-grid"><label>Spacing<input id="layoutSpacing" type="number" min="0.2" step="0.1" value="3"></label><label>Start along Submain<input id="layoutStart" type="number" min="0" step="0.1" value="0"></label><label>End along Submain<input id="layoutEnd" type="number" min="0" step="0.1" placeholder="full length"></label><label>Lateral length<input id="layoutLength" type="number" min="0.5" step="0.5" value="20"></label><label>Bearing<input id="layoutBearing" type="number" min="0" max="359.9" step="0.1" value="90"></label><label>Runs<select id="layoutSide"><option value="one">One direction</option><option value="both">Both directions</option></select></label><label class="wide">Clip to<select id="layoutClip"><option value="">None · free run</option></select></label><label class="wide check"><input id="layoutSkip" type="checkbox" checked> Skip existing lateral feed points</label></div><div class="panel-actions"><button id="flipLayout" type="button">Flip 180°</button><button id="previewLayout" type="button">Preview</button><button id="createLayout" class="primary" type="button" disabled>Create</button><button id="clearLayout" type="button">Clear</button></div><div id="layoutStatus" class="panel-status">Select a Submain, then preview.</div></aside>
 
-  <aside id="measurePanel" class="measure-panel"><div class="panel-head"><b>Ruler / spacing</b><button id="closeMeasure" type="button">×</button></div><div id="measureText" class="panel-note">Optional ruler: choose two objects for shortest distance.</div><div class="panel-actions"><button id="newMeasure" type="button">New reference</button><button id="familyMeasure" type="button">Family spacings</button></div></aside>
+  <aside id="measurePanel" class="measure-panel"><div class="panel-head"><b>Distance / spacing</b><button id="closeMeasure" type="button">×</button></div><div id="measureText" class="panel-note">Select two objects to measure the shortest distance.</div><div class="panel-actions"><button id="newMeasure" type="button">New reference</button><button id="familyMeasure" type="button">Family spacings</button></div></aside>
 
-  <div id="proposalChip" class="proposal-chip"><div><b id="proposalTitle">Proposed geometry</b><span id="proposalNote">Preview only</span></div><button id="acceptProposal" class="primary" type="button">Use geometry</button><button id="clearProposal" type="button">Clear</button></div>
-  <div id="status" class="status">FIELD · blank job · nothing assumed</div>
+  <div id="proposalChip" class="proposal-chip"><div><b id="proposalTitle">Proposed layout</b><span id="proposalNote">Preview only</span></div><button id="acceptProposal" class="primary" type="button">Accept layout</button><button id="clearProposal" type="button">Clear</button></div>
+  <div id="status" class="status">FIELD · No objects</div>
 </main>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -98,5 +99,6 @@
 <script src="./spatial-proposal.js"></script>
 <script src="./workbench-v2.js"></script>
 <script type="module" src="./workbench-shell.js"></script>
+<script src="./workbench-desktop-ux.js"></script>
 </body>
 </html>
