@@ -63,6 +63,7 @@
       const learningContext = learning.context(jobId, 20);
       const spatial = window.TAGROSpatial?.snapshot?.() || null;
       const canonicalObjects = Array.isArray(spatial?.objects) ? spatial.objects : [];
+      const jobInformation = window.TAGROJobInfo?.designContext?.(jobId) || null;
 
       body.preferences = {
         ...(body.preferences || {}),
@@ -72,6 +73,7 @@
       body.field = {
         ...(body.field || {}),
         anonymous_job_id: jobId,
+        job_information: jobInformation,
         canonical_spatial: spatial ? {
           contract: spatial.contract,
           revision: spatial.revision,
@@ -184,6 +186,7 @@
     proposalsById,
     proposalsBySummary,
     learningContext: () => learning.context(jobId, 20),
+    jobInformationContext: () => window.TAGROJobInfo?.designContext?.(jobId) || null,
     canonicalSpatialContext: () => window.TAGROSpatial?.snapshot?.() || null
   };
 })();
