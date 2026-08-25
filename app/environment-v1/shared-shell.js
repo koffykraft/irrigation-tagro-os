@@ -4,268 +4,280 @@
 const $ = (s, root=document) => root.querySelector(s);
 const pageFile = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
 const pageType = pageFile === 'info.html' ? 'info' : pageFile === 'workbench.html' ? 'workbench' : 'index';
-const PAGE = {
-  information:{label:'Information'},
-  field:{label:'Field'},
-  drawing:{label:'Drawing'},
-  adviser:{label:'Adviser'},
-  design:{label:'Design'},
-  materials:{label:'Materials'}
-};
-const ORDER = ['information','field','drawing','adviser','design','materials'];
-let lastShellHeight = null;
+const PAGES = [
+  ['information','Information'],
+  ['field','Field'],
+  ['drawing','Drawing'],
+  ['adviser','Adviser'],
+  ['design','Design'],
+  ['materials','Materials']
+];
+let lastHeight = '';
 
-/* Browser fallback only. The Worker now serves Information at bare root before UI render. */
-if(pageType==='index'){
-  const requested=(location.hash||'').replace('#','').toLowerCase();
-  if(requested==='field'||requested==='drawing'){
+if (pageType === 'index') {
+  const requested = (location.hash || '').slice(1).toLowerCase();
+  if (requested === 'field' || requested === 'drawing') {
     location.replace(`./workbench.html?view=${requested}`);
     return;
   }
-  if(!['adviser','design','materials'].includes(requested)){
+  if (!['adviser','design','materials'].includes(requested)) {
     location.replace('./info.html');
     return;
   }
 }
 
-function currentSurface(){
-  if(pageType==='info') return 'information';
-  if(pageType==='workbench') return $('#drawingMode')?.classList.contains('on') ? 'drawing' : 'field';
-  const s=$('#app')?.dataset?.surface;
-  return ['adviser','design','materials'].includes(s) ? s : 'adviser';
+function currentSurface() {
+  if (pageType === 'info') return 'information';
+  if (pageType === 'workbench') return $('#drawingMode')?.classList.contains('on') ? 'drawing' : 'field';
+  const surface = $('#app')?.dataset?.surface;
+  return ['adviser','design','materials'].includes(surface) ? surface : ((location.hash || '#adviser').slice(1));
 }
 
-function jobContext(){
-  try{
-    const api=window.TAGROJobInfo;
-    if(!api) return {title:'New irrigation job',detail:'Current job'};
-    const job=api.read(api.ensureJobId());
-    const customer=String(job?.customer?.name||'').trim();
-    const ref=String(job?.customer?.external_reference||'').trim();
-    const location=String(job?.customer?.location||'').trim();
-    const crops=[...new Set((job?.plots||[]).map(p=>String(p?.crop||'').trim()).filter(Boolean))];
-    const title=customer || ref || (crops.length ? `${crops.slice(0,2).join(' / ')} irrigation` : 'New irrigation job');
-    const detail=[location,crops.length && customer ? crops.slice(0,2).join(' / ') : ''].filter(Boolean).join(' · ') || 'Current job';
-    return {title,detail};
-  }catch{return {title:'New irrigation job',detail:'Current job'}}
+function jobContext() {
+  try {
+    const api = window.TAGROJobInfo;
+    if (!api) return { title: 'Irrigation job', detail: '' };
+    const job = api.read(api.ensureJobId());
+    const name = String(job?.customer?.name || '').trim();
+    const ref = String(job?.customer?.external_reference || '').trim();
+    const locationText = String(job?.customer?.location || '').trim();
+    const crops = [...new Set((job?.plots || []).map(p => String(p?.crop || '').trim()).filter(Boolean))];
+    return {
+      title: name || ref || (crops[0] ? `${crops[0]} irrigation` : 'Irrigation job'),
+      detail: [locationText, crops[0] && name ? crops[0] : ''].filter(Boolean).join(' · ')
+    };
+  } catch {
+    return { title: 'Irrigation job', detail: '' };
+  }
 }
 
-function setText(node,value){
-  if(!node)return;
-  const next=String(value ?? '');
-  if(node.textContent!==next) node.textContent=next;
-}
-function setAttr(node,name,value){
-  if(!node)return;
-  const next=String(value ?? '');
-  if(node.getAttribute(name)!==next) node.setAttribute(name,next);
-}
-
-const shell=document.createElement('header');
-shell.className='tagro-appshell';
-shell.setAttribute('role','banner');
-shell.innerHTML=`
+const shell = document.createElement('header');
+shell.className = 'tagro-appshell';
+shell.innerHTML = `
   <div class="tagro-shell-main">
-    <div class="tagro-shell-identity">
-      <div class="tagro-shell-brand">TAGRO IRRIGATION</div>
-      <div class="tagro-shell-job"><b id="tagroShellJob">New irrigation job</b><span id="tagroShellJobDetail">Current job</span></div>
-    </div>
+    <strong class="tagro-shell-brand">TAGRO IRRIGATION</strong>
+    <span class="tagro-shell-job"><b id="tagroShellJob">Irrigation job</b><small id="tagroShellJobDetail"></small></span>
     <nav id="tagroShellNav" class="tagro-shell-nav" aria-label="Irrigation pages"></nav>
-    <div class="tagro-shell-state"><div id="tagroShellSave" class="tagro-shell-save">Job active</div></div>
+    <span id="tagroShellSave" class="tagro-shell-save">Job active</span>
   </div>
   <div id="tagroShellRibbon" class="tagro-shell-ribbon" aria-label="Page tools" hidden></div>`;
 document.body.prepend(shell);
 document.body.classList.add('tagro-shell-active');
-document.body.dataset.tagroShellPage=pageType;
+document.body.dataset.tagroShellPage = pageType;
 
-const nav=$('#tagroShellNav');
-ORDER.forEach(id=>{
-  const b=document.createElement('button');
-  b.type='button';
-  b.className='tagro-shell-tab';
-  b.dataset.shellPage=id;
-  b.textContent=PAGE[id].label;
-  b.addEventListener('click',()=>openPage(id));
+const nav = $('#tagroShellNav');
+for (const [id,label] of PAGES) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'tagro-shell-tab';
+  b.dataset.shellPage = id;
+  b.textContent = label;
+  b.addEventListener('click', () => openPage(id));
   nav.append(b);
-});
-
-function openPage(id){
-  if(id==='information'){
-    if(pageType!=='info') location.href='./info.html';
-    return;
-  }
-  if(id==='field'||id==='drawing'){
-    if(pageType==='workbench'){
-      document.getElementById(id==='field'?'fieldMode':'drawingMode')?.click();
-      const u=new URL(location.href);
-      u.searchParams.set('view',id);
-      history.replaceState(null,'',u);
-      syncAll();
-    }else location.href=`./workbench.html?view=${id}`;
-    return;
-  }
-  if(pageType==='index'){
-    document.querySelector(`[data-open-surface="${id}"]`)?.click();
-    history.replaceState(null,'',`#${id}`);
-    syncAll();
-  }else location.href=`./index.html#${id}`;
 }
 
-function button(label,fn,opts={}){
-  const b=document.createElement('button');
-  b.type='button';
-  b.className=`tagro-ribbon-btn${opts.primary?' primary':''}${opts.danger?' danger':''}${opts.active?' active':''}`;
-  b.textContent=label;
-  if(opts.title)b.title=opts.title;
-  b.addEventListener('click',fn);
+function openPage(id) {
+  if (id === 'information') {
+    if (pageType !== 'info') location.href = './info.html';
+    return;
+  }
+  if (id === 'field' || id === 'drawing') {
+    if (pageType === 'workbench') {
+      document.getElementById(id === 'field' ? 'fieldMode' : 'drawingMode')?.click();
+      const url = new URL(location.href);
+      url.searchParams.set('view', id);
+      history.replaceState(null, '', url);
+      setTimeout(sync, 0);
+    } else {
+      location.href = `./workbench.html?view=${id}`;
+    }
+    return;
+  }
+  if (pageType === 'index') {
+    document.querySelector(`[data-open-surface="${id}"]`)?.click();
+    history.replaceState(null, '', `#${id}`);
+    setTimeout(sync, 0);
+  } else {
+    location.href = `./index.html#${id}`;
+  }
+}
+
+function command(label, fn) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'tagro-ribbon-btn';
+  b.textContent = label;
+  b.addEventListener('click', fn);
   return b;
 }
-function group(labelText){
-  const g=document.createElement('div');
-  g.className='tagro-ribbon-group';
-  if(labelText){const l=document.createElement('span');l.className='tagro-ribbon-group-label';l.textContent=labelText;g.append(l)}
-  return g;
-}
-function proxy(id,label,opts={}){
-  const src=document.getElementById(id);
-  if(!src||src.classList.contains('hidden'))return null;
-  return button(label,()=>src.click(),{...opts,active:opts.active??src.classList.contains('on')});
-}
-function toolProxy(kind,label){
-  const src=document.querySelector(`#toolDock [data-tool="${kind}"]`);
-  if(!src)return null;
-  return button(label,()=>src.click(),{active:src.classList.contains('on')});
-}
-function appendAll(g,items){items.filter(Boolean).forEach(x=>g.append(x));return g}
 
-function renderWorkbenchTools(ribbon,surface){
-  if(surface==='field'){
-    const view=group('MAP');
-    const wrap=document.createElement('div');wrap.className='tagro-ribbon-search';
-    const input=document.createElement('input');input.placeholder='Search place or lat,lng';input.value=$('#searchInput')?.value||'';
-    const go=document.createElement('button');go.type='button';go.textContent='⌕';
-    const run=()=>{const src=$('#searchInput');if(src)src.value=input.value;$('#searchButton')?.click()};
-    go.addEventListener('click',run);input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();run()}});
-    wrap.append(input,go);
-    view.append(wrap,button('Locate',()=>$('#locateButton')?.click()));
-    ribbon.append(view);
+function sourceByTool(kind) {
+  return document.querySelector(`#toolDock [data-tool="${kind}"]`);
+}
+
+function tool(label, kind) {
+  const source = sourceByTool(kind);
+  if (!source) return null;
+  return command(label, () => source.click());
+}
+
+function byId(label, id) {
+  const source = document.getElementById(id);
+  if (!source) return null;
+  return command(label, () => source.click());
+}
+
+function append(ribbon, items) {
+  for (const item of items) if (item) ribbon.append(item);
+}
+
+function renderInfoTools(ribbon) {
+  append(ribbon, [
+    byId('Save', 'saveNow'),
+    byId('Add plot', 'addPlot'),
+    command('Measure on map', () => {
+      const measure = document.querySelector('.map-measure');
+      if (measure) measure.click();
+      else location.href = './workbench.html?measure=all&from=info';
+    }),
+    command('Products', () => {
+      const open = $('#openProducts');
+      if (open) open.click();
+      else {
+        location.hash = 'products';
+        $('#jainProducts')?.scrollIntoView();
+      }
+    })
+  ]);
+}
+
+function renderWorkbenchTools(ribbon, surface) {
+  if (surface === 'field') {
+    const search = document.createElement('span');
+    search.className = 'tagro-ribbon-search';
+    const input = document.createElement('input');
+    input.placeholder = 'Search place or lat,lng';
+    input.value = $('#searchInput')?.value || '';
+    const go = command('Search', () => {
+      if ($('#searchInput')) $('#searchInput').value = input.value;
+      $('#searchButton')?.click();
+    });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') go.click(); });
+    search.append(input, go);
+    ribbon.append(search, command('Locate', () => $('#locateButton')?.click()));
   }
-  ribbon.append(appendAll(group('FIELD'),[toolProxy('select','Select'),toolProxy('boundary','Boundary'),toolProxy('plot','Plot')]));
-  ribbon.append(appendAll(group('NETWORK'),[toolProxy('main','Main'),toolProxy('submain','Submain'),toolProxy('lateral','Lateral'),toolProxy('water_source','Water'),toolProxy('plant','Plant')]));
-  ribbon.append(appendAll(group('MEASURE'),[button('Ruler',()=>$('#measureTool')?.click(),{active:$('#measurePanel')?.classList.contains('show')}),button('More',()=>$('#workButton')?.click(),{primary:true})]));
 
-  if($('#inspector')?.classList.contains('show')){
-    const s=group('SELECTION');s.classList.add('tagro-ribbon-selection');
-    appendAll(s,[proxy('multiToggle','Multi-select'),proxy('selectSame','Same type'),proxy('moveSelected','Move',{primary:true}),proxy('editSelected','Edit shape'),proxy('rotateSelected','Rotate'),proxy('duplicateSelected','Duplicate'),proxy('connectSelected','Connect'),proxy('labelSelected','Details'),proxy('emitterSelected','Emitter'),proxy('layoutSelected','Layout'),proxy('deleteSelected','Delete',{danger:true}),proxy('closeInspector','Clear')]);
-    ribbon.append(s);
+  append(ribbon, [
+    tool('Select','select'),
+    tool('Boundary','boundary'),
+    tool('Plot','plot'),
+    tool('Section','section'),
+    tool('Crop area','crop_area'),
+    tool('Path','path'),
+    tool('High','high_point'),
+    tool('Low','low_point'),
+    tool('Water','water_source'),
+    tool('Pump','pump'),
+    tool('Tank','tank'),
+    tool('Main','main'),
+    tool('Submain','submain'),
+    tool('Lateral','lateral'),
+    tool('Plant','plant'),
+    tool('Device','device'),
+    byId('Ruler','measureTool'),
+    byId('Layout laterals','layoutTool'),
+    byId('All tools','workButton')
+  ]);
+}
+
+function renderIndexTools(ribbon, surface) {
+  if (surface === 'materials') {
+    ribbon.append(command('Products', () => { location.href = './info.html#products'; }));
   }
 }
 
-function renderInfoTools(ribbon){
-  ribbon.append(appendAll(group('PROJECT'),[
-    proxy('saveNow','Save',{primary:true}),
-    proxy('addPlot','Add plot'),
-    button('Measure on map',()=>{const m=document.querySelector('.map-measure');if(m)m.click();else location.href='./workbench.html?measure=all&from=info'}),
-    button('Products',()=>{const b=$('#openProducts');if(b)b.click();else{location.hash='products';document.getElementById('jainProducts')?.scrollIntoView({behavior:'smooth'})}})
-  ]));
+function setHeight(hasTools) {
+  const height = hasTools ? '74px' : '40px';
+  if (height === lastHeight) return;
+  lastHeight = height;
+  document.documentElement.style.setProperty('--tagro-shell-height', height);
+  if (pageType === 'workbench') {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('resize'));
+      window.dispatchEvent(new CustomEvent('tagro:shell-layout', { detail: { height } }));
+    }));
+  }
 }
 
-function renderIndexTools(ribbon,surface){
-  if(surface==='materials') ribbon.append(appendAll(group('MATERIALS'),[button('Products',()=>{location.href='./info.html#products'},{primary:true})]));
-}
-
-function notifyLayoutChange(height){
-  if(pageType!=='workbench' || lastShellHeight===height) return;
-  lastShellHeight=height;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    window.dispatchEvent(new Event('resize'));
-    window.dispatchEvent(new CustomEvent('tagro:shell-layout',{detail:{height}}));
-  }));
-}
-
-function renderRibbon(){
-  const ribbon=$('#tagroShellRibbon');
-  if(!ribbon)return;
+function renderTools() {
+  const ribbon = $('#tagroShellRibbon');
   ribbon.replaceChildren();
-  const surface=currentSurface();
-  if(pageType==='workbench')renderWorkbenchTools(ribbon,surface);
-  else if(pageType==='info')renderInfoTools(ribbon);
-  else renderIndexTools(ribbon,surface);
-  const hasTools=Boolean(ribbon.children.length);
-  ribbon.hidden=!hasTools;
-  shell.classList.toggle('has-ribbon',hasTools);
-  document.body.classList.toggle('tagro-shell-has-ribbon',hasTools);
-  const height=hasTools?'86px':'50px';
-  if(document.documentElement.style.getPropertyValue('--tagro-shell-height')!==height){
-    document.documentElement.style.setProperty('--tagro-shell-height',height);
-  }
-  notifyLayoutChange(height);
+  const surface = currentSurface();
+  if (pageType === 'info') renderInfoTools(ribbon);
+  else if (pageType === 'workbench') renderWorkbenchTools(ribbon, surface);
+  else renderIndexTools(ribbon, surface);
+  const hasTools = ribbon.children.length > 0;
+  ribbon.hidden = !hasTools;
+  setHeight(hasTools);
 }
 
-function suppressForeignControls(surface){
-  document.body.dataset.tagroShellSurface=surface;
-  if(pageType==='index'){
-    const chip=$('#activeToolChip');if(chip)chip.hidden=true;
-    const selection=$('#selectionCard');if(selection)selection.hidden=true;
-    $('#workMenu')?.classList.remove('open');
+function syncNav() {
+  const surface = currentSurface();
+  for (const b of document.querySelectorAll('.tagro-shell-tab')) {
+    b.classList.toggle('active', b.dataset.shellPage === surface);
   }
+  document.body.dataset.tagroShellSurface = surface;
+  document.title = `TAGRO Irrigation · ${PAGES.find(([id]) => id === surface)?.[1] || 'Irrigation'}`;
 }
-function syncNav(){
-  const surface=currentSurface();
-  suppressForeignControls(surface);
-  document.querySelectorAll('.tagro-shell-tab').forEach(b=>b.classList.toggle('active',b.dataset.shellPage===surface));
-  const title=`TAGRO Irrigation · ${PAGE[surface].label}`;
-  if(document.title!==title) document.title=title;
-}
-function syncJob(){
-  const j=jobContext();
-  setText($('#tagroShellJob'),j.title);
-  setText($('#tagroShellJobDetail'),j.detail);
-}
-function syncSave(){
-  const out=$('#tagroShellSave');if(!out)return;
-  let src=null,mode='neutral',text='Job active',title='Current job';
-  if(pageType==='info') src=$('#saveState');
-  else if(pageType==='workbench') src=$('#tagroSaveIndicator');
-  else {
-    mode='local';
-    text='Local job';
-    title='Project information and canonical field geometry remain stored with this local job.';
-  }
-  if(src){text=src.textContent?.trim()||'Saved locally';mode=src.dataset?.mode||'local';title=src.title||text}
-  setText(out,text);
-  setAttr(out,'title',title);
-  if(out.dataset.mode!==mode) out.dataset.mode=mode;
-}
-function syncAll(){syncNav();syncJob();syncSave();renderRibbon()}
 
-function initialRoute(){
-  if(pageType==='workbench'){
-    const requested=new URLSearchParams(location.search).get('view');
-    if(requested==='drawing')$('#drawingMode')?.click();else if(requested==='field')$('#fieldMode')?.click();
-  }else if(pageType==='index'){
-    const requested=(location.hash||'').replace('#','');
+function syncJob() {
+  const job = jobContext();
+  $('#tagroShellJob').textContent = job.title;
+  $('#tagroShellJobDetail').textContent = job.detail;
+}
+
+function syncSave() {
+  const out = $('#tagroShellSave');
+  let source = null;
+  if (pageType === 'info') source = $('#saveState');
+  if (pageType === 'workbench') source = $('#tagroSaveIndicator');
+  out.textContent = source?.textContent?.trim() || (pageType === 'index' ? 'Local job' : 'Job active');
+}
+
+function sync() {
+  syncNav();
+  syncJob();
+  syncSave();
+  renderTools();
+}
+
+function initialRoute() {
+  if (pageType === 'workbench') {
+    const requested = new URLSearchParams(location.search).get('view');
+    if (requested === 'drawing') $('#drawingMode')?.click();
+    else $('#fieldMode')?.click();
+  } else if (pageType === 'index') {
+    const requested = (location.hash || '#adviser').slice(1);
     document.querySelector(`[data-open-surface="${requested}"]`)?.click();
   }
 }
 
 initialRoute();
-syncAll();
+sync();
 
-if(pageType==='workbench'){
-  ['fieldMode','drawingMode'].forEach(id=>document.getElementById(id)?.addEventListener('click',()=>setTimeout(syncAll,0)));
-  const targets=[$('#inspector'),$('#toolDock'),$('#measurePanel')].filter(Boolean);
-  targets.forEach(t=>new MutationObserver(()=>requestAnimationFrame(syncAll)).observe(t,{attributes:true,subtree:true,attributeFilter:['class']}));
-}else if(pageType==='index'){
-  const app=$('#app');
-  if(app)new MutationObserver(()=>requestAnimationFrame(syncAll)).observe(app,{attributes:true,attributeFilter:['data-surface']});
+if (pageType === 'workbench') {
+  $('#fieldMode')?.addEventListener('click', () => setTimeout(sync, 0));
+  $('#drawingMode')?.addEventListener('click', () => setTimeout(sync, 0));
 }
 
-window.addEventListener('tagro:job-info-change',()=>{syncJob();syncSave()});
+document.addEventListener('click', event => {
+  if (event.target.closest?.('[data-open-surface]')) setTimeout(sync, 0);
+});
+window.addEventListener('hashchange', () => setTimeout(sync, 0));
+window.addEventListener('tagro:job-info-change', () => { syncJob(); syncSave(); });
 
-/* Event-driven save indicator updates. No timer/polling. */
-const saveSource=pageType==='info' ? $('#saveState') : pageType==='workbench' ? $('#tagroSaveIndicator') : null;
-if(saveSource){
-  new MutationObserver(()=>requestAnimationFrame(syncSave)).observe(saveSource,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['data-mode','title']});
+const saveSource = pageType === 'info' ? $('#saveState') : pageType === 'workbench' ? $('#tagroSaveIndicator') : null;
+if (saveSource) {
+  new MutationObserver(syncSave).observe(saveSource, { childList:true, characterData:true, subtree:true });
 }
 })();
