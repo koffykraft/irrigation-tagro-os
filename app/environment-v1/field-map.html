@@ -12,8 +12,8 @@
 <body>
 <div class="page">
   <header class="topbar">
-    <a class="back" href="./index.html" aria-label="Back to Irrigation Environment">←</a>
-    <div class="title"><b>FIELD</b><span>Real map · canonical geometry · same job</span></div>
+    <a class="back" href="./index.html" aria-label="Back to Irrigation Design">←</a>
+    <div class="title"><b>FIELD</b><span>Field Map</span></div>
     <div class="controls">
       <div class="search"><input id="searchInput" placeholder="Search place or lat,lng"><button id="searchButton" type="button">⌕</button></div>
       <button id="locateButton" class="locate" type="button" aria-label="Use current location">◎</button>
@@ -23,8 +23,8 @@
   <main class="mapwrap">
     <div id="map" class="map"></div>
 
-    <aside id="workMenu" class="workmenu" aria-label="Field work tools">
-      <div class="workhead"><b>Work on field</b><button id="closeWork" type="button">×</button></div>
+    <aside id="workMenu" class="workmenu" aria-label="Field tools">
+      <div class="workhead"><b>Field tools</b><button id="closeWork" type="button">×</button></div>
       <div class="tools" id="tools">
         <button type="button" data-kind="select"><span class="tool-symbol">↖</span>Select</button>
         <button type="button" data-kind="boundary"><span class="tool-symbol">⬡</span>Boundary</button>
@@ -37,22 +37,22 @@
         <button type="button" data-kind="device"><span class="tool-symbol">⊙</span>Device</button>
       </div>
       <div class="footactions">
-        <a href="./spatial-drawing.html">Open Drawing</a>
+        <a href="./spatial-drawing.html">Drawing</a>
         <a href="./index.html">Adviser</a>
       </div>
     </aside>
 
     <aside id="proposalPanel" class="proposal-panel" aria-live="polite">
-      <span class="proposal-kicker">PROPOSED · NOT YET DESIGN</span>
-      <b id="proposalTitle">Geometry proposal</b>
+      <span class="proposal-kicker">PROPOSED LAYOUT</span>
+      <b id="proposalTitle">Layout proposal</b>
       <p id="proposalNote"></p>
       <div class="proposal-actions">
-        <button id="acceptProposal" class="primary" type="button">Use this geometry</button>
+        <button id="acceptProposal" class="primary" type="button">Accept layout</button>
         <button id="clearProposal" type="button">Clear preview</button>
       </div>
     </aside>
 
-    <div id="status" class="status">Blank field · nothing assumed</div>
+    <div id="status" class="status">No field objects</div>
 
     <aside id="selection" class="selection" aria-live="polite">
       <div class="selhead">
