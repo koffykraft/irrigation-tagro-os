@@ -127,6 +127,20 @@ function byId(label, id) {
   return command(label, () => source.click());
 }
 
+function scrollToId(id) {
+  const node = document.getElementById(id);
+  if (!node) return false;
+  node.scrollIntoView({ block:'start' });
+  return true;
+}
+
+function focusId(id) {
+  const node = document.getElementById(id);
+  if (!node) return false;
+  node.focus();
+  return true;
+}
+
 function append(ribbon, items) {
   for (const item of items) if (item) ribbon.append(item);
 }
@@ -134,20 +148,18 @@ function append(ribbon, items) {
 function renderInfoTools(ribbon) {
   append(ribbon, [
     byId('Save', 'saveNow'),
+    command('Purpose', () => scrollToId('infoPurpose')),
+    command('Customer', () => scrollToId('infoCustomer')),
+    command('Water', () => scrollToId('infoWater')),
+    command('Plots', () => scrollToId('infoPlots')),
     byId('Add plot', 'addPlot'),
+    command('Site', () => scrollToId('infoSite')),
     command('Measure on map', () => {
       const measure = document.querySelector('.map-measure');
       if (measure) measure.click();
       else location.href = './workbench.html?measure=all&from=info';
     }),
-    command('Products', () => {
-      const open = $('#openProducts');
-      if (open) open.click();
-      else {
-        location.hash = 'products';
-        $('#jainProducts')?.scrollIntoView();
-      }
-    })
+    command('Products', () => scrollToId('jainProducts'))
   ]);
 }
 
@@ -183,7 +195,7 @@ function renderWorkbenchTools(ribbon, surface) {
     tool('Submain','submain'),
     tool('Lateral','lateral'),
     tool('Plant','plant'),
-    tool('Device','device'),
+    tool('Emitter / sprinkler','device'),
     byId('Ruler','measureTool'),
     byId('Layout laterals','layoutTool'),
     byId('All tools','workButton')
@@ -191,8 +203,38 @@ function renderWorkbenchTools(ribbon, surface) {
 }
 
 function renderIndexTools(ribbon, surface) {
+  if (surface === 'adviser') {
+    append(ribbon, [
+      command('Ask', () => focusId('adviserInput')),
+      command('Information', () => openPage('information')),
+      command('Field', () => openPage('field')),
+      command('Design', () => openPage('design')),
+      command('Materials', () => openPage('materials'))
+    ]);
+    return;
+  }
+
+  if (surface === 'design') {
+    append(ribbon, [
+      command('Summary', () => scrollToId('designTop')),
+      command('Network', () => scrollToId('designNetwork')),
+      command('Checks', () => scrollToId('designChecks')),
+      command('Required information', () => scrollToId('designRequired')),
+      command('Field', () => openPage('field')),
+      command('Materials', () => openPage('materials'))
+    ]);
+    return;
+  }
+
   if (surface === 'materials') {
-    ribbon.append(command('Products', () => { location.href = './info.html#products'; }));
+    append(ribbon, [
+      command('BOM', () => scrollToId('materialsList')),
+      command('Product options', () => scrollToId('materialsProducts')),
+      command('Products', () => { location.href = './info.html#products'; }),
+      command('Design', () => openPage('design')),
+      command('Adviser', () => openPage('adviser')),
+      command('Information', () => openPage('information'))
+    ]);
   }
 }
 
