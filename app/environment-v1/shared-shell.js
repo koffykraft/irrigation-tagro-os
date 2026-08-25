@@ -56,6 +56,7 @@ shell.className = 'tagro-appshell';
 shell.innerHTML = `
   <div class="tagro-shell-main">
     <strong class="tagro-shell-brand">TAGRO IRRIGATION</strong>
+    <a class="tagro-shell-pages" href="./page-set.html" aria-label="Open irrigation page set">Pages</a>
     <span class="tagro-shell-job"><b id="tagroShellJob">Irrigation job</b><small id="tagroShellJobDetail"></small></span>
     <nav id="tagroShellNav" class="tagro-shell-nav" aria-label="Irrigation pages"></nav>
     <span id="tagroShellSave" class="tagro-shell-save">Job active</span>
@@ -163,34 +164,27 @@ function renderInfoTools(ribbon) {
   ]);
 }
 
-function renderWorkbenchTools(ribbon, surface) {
-  if (surface === 'field') {
-    const search = document.createElement('span');
-    search.className = 'tagro-ribbon-search';
-    const input = document.createElement('input');
-    input.placeholder = 'Search place or lat,lng';
-    input.value = $('#searchInput')?.value || '';
-    const go = command('Search', () => {
-      if ($('#searchInput')) $('#searchInput').value = input.value;
-      $('#searchButton')?.click();
-    });
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') go.click(); });
-    search.append(input, go);
-    ribbon.append(search, command('Locate', () => $('#locateButton')?.click()));
-  }
+function fieldSearch(ribbon) {
+  const search = document.createElement('span');
+  search.className = 'tagro-ribbon-search';
+  const input = document.createElement('input');
+  input.placeholder = 'Search place or lat,lng';
+  input.value = $('#searchInput')?.value || '';
+  const go = command('Search', () => {
+    if ($('#searchInput')) $('#searchInput').value = input.value;
+    $('#searchButton')?.click();
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') go.click(); });
+  search.append(input, go);
+  ribbon.append(search, command('Locate', () => $('#locateButton')?.click()));
+}
 
-  append(ribbon, [
+function renderWorkbenchTools(ribbon, surface) {
+  if (surface === 'field') fieldSearch(ribbon);
+
+  const common = [
     tool('Select','select'),
-    tool('Boundary','boundary'),
-    tool('Plot','plot'),
-    tool('Section','section'),
-    tool('Crop area','crop_area'),
-    tool('Path','path'),
-    tool('High','high_point'),
-    tool('Low','low_point'),
-    tool('Water','water_source'),
-    tool('Pump','pump'),
-    tool('Tank','tank'),
+    ...(surface === 'field' ? [tool('Boundary','boundary')] : []),
     tool('Main','main'),
     tool('Submain','submain'),
     tool('Lateral','lateral'),
@@ -199,7 +193,8 @@ function renderWorkbenchTools(ribbon, surface) {
     byId('Ruler','measureTool'),
     byId('Layout laterals','layoutTool'),
     byId('All tools','workButton')
-  ]);
+  ];
+  append(ribbon, common);
 }
 
 function renderIndexTools(ribbon, surface) {
@@ -230,7 +225,7 @@ function renderIndexTools(ribbon, surface) {
     append(ribbon, [
       command('BOM', () => scrollToId('materialsList')),
       command('Product options', () => scrollToId('materialsProducts')),
-      command('Products', () => { location.href = './info.html#products'; }),
+      command('Products', () => { location.href = './info.html#jainProducts'; }),
       command('Design', () => openPage('design')),
       command('Adviser', () => openPage('adviser')),
       command('Information', () => openPage('information'))
@@ -239,7 +234,7 @@ function renderIndexTools(ribbon, surface) {
 }
 
 function setHeight(hasTools) {
-  const height = hasTools ? '74px' : '40px';
+  const height = hasTools ? '78px' : '42px';
   if (height === lastHeight) return;
   lastHeight = height;
   document.documentElement.style.setProperty('--tagro-shell-height', height);
@@ -320,6 +315,6 @@ window.addEventListener('tagro:job-info-change', () => { syncJob(); syncSave(); 
 
 const saveSource = pageType === 'info' ? $('#saveState') : pageType === 'workbench' ? $('#tagroSaveIndicator') : null;
 if (saveSource) {
-  new MutationObserver(syncSave).observe(saveSource, { childList:true, characterData:true, subtree:true });
+  new MutationObserver(syncSave).observe(saveSource, { childList:true, characterData:true,subtree:true });
 }
 })();
