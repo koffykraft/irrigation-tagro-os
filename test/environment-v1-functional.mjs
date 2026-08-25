@@ -36,7 +36,6 @@ const pageErrors = [];
 page.on('pageerror', error => pageErrors.push(error.message));
 
 try {
-  // Information: use the visible progressive path, edit, save, reload.
   await page.goto(`${base}/info.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.tagro-appshell');
   const customerToggle = page.getByRole('button', { name: 'Customer details', exact: true });
@@ -56,17 +55,15 @@ try {
   assert(await page.inputValue('#customerLocation') === 'Karavaloor', 'Information: location did not persist');
   assert(await page.locator('.plot-card').first().locator('[data-field="crop"]').inputValue() === 'Pepper', 'Information: crop did not persist');
 
-  // Navigate to Field.
   await page.locator('.tagro-shell-tab[data-shell-page="field"]').click();
   await page.waitForURL(/workbench\.html\?view=field/);
   await page.waitForFunction(() => window.TAGROWorkbenchRuntime?.ok === true);
   await page.waitForFunction(() => document.getElementById('map')?._leaflet_id);
 
-  // Every primary Field tool must reach the real underlying tool handler.
   const tools = [
     ['Select','select'],['Boundary','boundary'],['Plot','plot'],['Section','section'],['Crop area','crop_area'],
     ['Path','path'],['High','high_point'],['Low','low_point'],['Water','water_source'],['Pump','pump'],['Tank','tank'],
-    ['Main','main'],['Submain','submain'],['Lateral','lateral'],['Plant','plant'],['Device','device']
+    ['Main','main'],['Submain','submain'],['Lateral','lateral'],['Plant','plant'],['Emitter / sprinkler','device']
   ];
   for (const [label, kind] of tools) {
     await page.locator('#tagroShellRibbon').getByRole('button', { name: label, exact: true }).click();
@@ -74,7 +71,6 @@ try {
   }
   await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Select', exact: true }).click();
 
-  // Ruler and full tool dock must open and close.
   await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Ruler', exact: true }).click();
   await page.waitForFunction(() => document.getElementById('measurePanel')?.classList.contains('show'));
   await page.click('#closeMeasure');
@@ -82,7 +78,6 @@ try {
   await page.waitForFunction(() => document.getElementById('toolDock')?.classList.contains('open'));
   await page.click('#closeTools');
 
-  // Real UI point drawing through Leaflet-Geoman.
   const plantsBefore = await page.evaluate(() => window.TAGROSpatial.snapshot().objects.filter(o => o.kind === 'plant').length);
   await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Plant', exact: true }).click();
   const mapBox = await page.locator('#map').boundingBox();
@@ -91,7 +86,6 @@ try {
   await page.waitForFunction(before => window.TAGROSpatial.snapshot().objects.filter(o => o.kind === 'plant').length > before, plantsBefore);
   await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Select', exact: true }).click();
 
-  // Create a deterministic canonical sample for manipulation tests.
   await page.evaluate(() => {
     const s = window.TAGROSpatial;
     s.clear();
@@ -106,7 +100,6 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('.tagro-existing').length >= 5);
   assert(await page.evaluate(() => window.TAGROSpatial.snapshot().objects.length) === 5, 'Field: canonical sample did not persist through reload');
 
-  // Boundary: selection, Details, duplicate, delete.
   await selectCanonicalObject(page, 'B1');
   await page.waitForFunction(() => document.getElementById('inspector')?.classList.contains('show'));
   await page.click('#labelSelected');
@@ -121,7 +114,6 @@ try {
   await page.click('#deleteSelected');
   await page.waitForFunction(n => window.TAGROSpatial.snapshot().objects.length === n, countBeforeDuplicate);
 
-  // Main: move, rotate and connection panel.
   await selectCanonicalObject(page, 'M1');
   const mainBefore = await page.evaluate(() => JSON.stringify(window.TAGROSpatial.snapshot().objects.find(o => o.id === 'M1')?.geometry?.coordinates));
   await page.click('#moveSelected');
@@ -134,13 +126,11 @@ try {
   await page.waitForFunction(() => document.getElementById('connectPanel')?.classList.contains('show'));
   await page.click('#closeConnect');
 
-  // Submain: Layout control must open.
   await selectCanonicalObject(page, 'S1');
   await page.click('#layoutSelected');
   await page.waitForFunction(() => document.getElementById('layoutPanel')?.classList.contains('show'));
   await page.click('#closeLayout');
 
-  // Lateral: emitter control and same-type multi-select.
   await selectCanonicalObject(page, 'L1');
   await page.click('#emitterSelected');
   await page.waitForFunction(() => document.getElementById('emitterPanel')?.classList.contains('show'));
@@ -154,7 +144,6 @@ try {
   await page.waitForFunction(() => /2 selected/.test(document.getElementById('multiCount')?.textContent || ''));
   await page.click('#clearMulti');
 
-  // Drawing must use the same canonical objects and survive reload.
   await page.locator('.tagro-shell-tab[data-shell-page="drawing"]').click();
   await page.waitForFunction(() => document.getElementById('drawingSurface')?.classList.contains('on'));
   await page.waitForFunction(() => document.querySelectorAll('.draw-object').length >= 5);
