@@ -2,29 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <title>TAGRO Irrigation · Drawing</title>
+  <title>TAGRO Irrigation · Compatibility Drawing</title>
   <link rel="stylesheet" href="./spatial-drawing.css">
 </head>
 <body>
 <div class="page">
   <header class="topbar">
     <a class="back" href="./workbench.html?view=drawing" aria-label="Back to current Drawing workbench">←</a>
-    <div class="title"><b>DRAWING</b><span>Compatibility canonical drawing</span></div>
+    <div class="title"><b>DRAWING</b><span>Compatibility reference · current work is in Drawing</span></div>
     <div class="controls">
       <a href="./workbench.html?view=field">Current Field</a>
+      <a href="./workbench.html?view=drawing">Current Drawing</a>
       <button id="fitButton" type="button">Fit</button>
-      <button id="workButton" class="work" type="button">＋</button>
+      <button id="workButton" class="work" type="button" aria-label="Open compatibility drawing tools">＋</button>
     </div>
   </header>
 
   <main class="stage">
-    <svg id="canvas" class="canvas" viewBox="0 0 1000 700" role="application" aria-label="Irrigation drawing"></svg>
+    <svg id="canvas" class="canvas" viewBox="0 0 1000 700" role="application" aria-label="Irrigation compatibility drawing"></svg>
     <div id="empty" class="empty"><div><b>No real field geometry yet.</b><span>Open the current Field workbench and mark at least one real location or boundary. This compatibility drawing uses the same canonical coordinates rather than inventing a scale.</span></div></div>
 
     <aside id="workMenu" class="workmenu">
-      <div class="workhead"><b>Work on drawing</b><button id="closeWork" type="button">×</button></div>
+      <div class="workhead"><b>Compatibility tools</b><button id="closeWork" type="button" aria-label="Close tools">×</button></div>
       <div id="tools" class="tools">
         <button type="button" data-kind="select"><span class="tool-symbol">↖</span>Select</button>
         <button type="button" data-kind="boundary"><span class="tool-symbol">⬡</span>Boundary</button>
@@ -34,13 +35,13 @@
         <button type="button" data-kind="plant"><span class="tool-symbol">●</span>Plant</button>
         <button type="button" data-kind="water_source"><span class="tool-symbol">◉</span>Water</button>
         <button type="button" data-kind="path"><span class="tool-symbol">╱</span>Path</button>
-        <button type="button" data-kind="device"><span class="tool-symbol">⊙</span>Device</button>
+        <button type="button" data-kind="device"><span class="tool-symbol">⊙</span>Emitter / sprinkler</button>
       </div>
       <button id="finishBoundary" class="finish" type="button">Finish boundary</button>
     </aside>
 
     <aside id="selection" class="selection">
-      <div class="selhead"><div><b id="selectionName">Object</b><span id="selectionState"></span></div><button id="closeSelection" type="button">×</button></div>
+      <div class="selhead"><div><b id="selectionName">Object</b><span id="selectionState"></span></div><button id="closeSelection" type="button" aria-label="Close selection">×</button></div>
       <div id="measure" class="measure"></div>
       <div class="selactions">
         <button id="editSelected" class="primary" type="button">Edit points</button>
