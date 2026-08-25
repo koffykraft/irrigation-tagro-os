@@ -6,11 +6,62 @@
   const ACTIVE_JOB_KEY = "tagro.irrigation.learning.v1:active-job";
   const clone = value => JSON.parse(JSON.stringify(value));
   const now = () => new Date().toISOString();
+  const volatileStates = new Map();
+  let volatileJobId = null;
+  let persistenceState = { ok: true, mode: "localStorage", error: null, at: now() };
+
+  function persistenceEvent(ok, error = null) {
+    persistenceState = {
+      ok,
+      mode: ok ? "localStorage" : "memory-fallback",
+      error: error ? String(error?.message || error) : null,
+      at: now()
+    };
+    window.dispatchEvent(new CustomEvent(ok ? "tagro:job-info-save-ok" : "tagro:job-info-save-error", {
+      detail: clone(persistenceState)
+    }));
+  }
+
+  function safeGet(key) {
+    try { return localStorage.getItem(key); }
+    catch (error) { persistenceEvent(false, error); return null; }
+  }
+
+  function safeSet(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      persistenceEvent(true);
+      return true;
+    } catch (error) {
+      persistenceEvent(false, error);
+      return false;
+    }
+  }
+
+  function safeRemove(key) {
+    try {
+      localStorage.removeItem(key);
+      persistenceEvent(true);
+      return true;
+    } catch (error) {
+      persistenceEvent(false, error);
+      return false;
+    }
+  }
 
   function ensureJobId(existing) {
-    if (window.TAGROLearning?.ensureJobId) return window.TAGROLearning.ensureJobId(existing);
-    const id = existing || localStorage.getItem(ACTIVE_JOB_KEY) || `job_${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
-    localStorage.setItem(ACTIVE_JOB_KEY, id);
+    try {
+      if (window.TAGROLearning?.ensureJobId) {
+        const id = window.TAGROLearning.ensureJobId(existing);
+        if (id) {
+          volatileJobId = id;
+          return id;
+        }
+      }
+    } catch {}
+    const id = existing || safeGet(ACTIVE_JOB_KEY) || volatileJobId || `job_${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
+    volatileJobId = id;
+    safeSet(ACTIVE_JOB_KEY, id);
     return id;
   }
 
@@ -106,14 +157,20 @@
     };
   }
 
+  function normalize(parsed) {
+    if (!parsed?.contract || parsed.contract !== CONTRACT) return null;
+    parsed.audience = parsed.audience || { mode: "exploring", current_need: "understand" };
+    if (!Array.isArray(parsed.plots) || !parsed.plots.length) parsed.plots = [blankPlot(1)];
+    parsed.events = Array.isArray(parsed.events) ? parsed.events : [];
+    return parsed;
+  }
+
   function read(jobId = ensureJobId()) {
+    const volatile = volatileStates.get(jobId);
+    if (volatile) return clone(volatile);
     try {
-      const parsed = JSON.parse(localStorage.getItem(key(jobId)) || "null");
-      if (parsed?.contract === CONTRACT) {
-        parsed.audience = parsed.audience || { mode: "exploring", current_need: "understand" };
-        if (!Array.isArray(parsed.plots) || !parsed.plots.length) parsed.plots = [blankPlot(1)];
-        return parsed;
-      }
+      const parsed = normalize(JSON.parse(safeGet(key(jobId)) || "null"));
+      if (parsed) return parsed;
     } catch {}
     return empty(jobId);
   }
@@ -138,8 +195,11 @@
     next.revision = Number(next.revision || 0) + 1;
     next.updated_at = now();
     event(next, eventType, payload);
-    localStorage.setItem(key(next.job_id), JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent("tagro:job-info-change", { detail: clone(next) }));
+    volatileStates.set(next.job_id, clone(next));
+    safeSet(key(next.job_id), JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent("tagro:job-info-change", {
+      detail: { ...clone(next), persistence: clone(persistenceState) }
+    }));
     return next;
   }
 
@@ -212,9 +272,12 @@
   }
 
   function clear(jobId = ensureJobId()) {
-    localStorage.removeItem(key(jobId));
+    volatileStates.delete(jobId);
+    safeRemove(key(jobId));
     const state = empty(jobId);
-    window.dispatchEvent(new CustomEvent("tagro:job-info-change", { detail: clone(state) }));
+    window.dispatchEvent(new CustomEvent("tagro:job-info-change", {
+      detail: { ...clone(state), persistence: clone(persistenceState) }
+    }));
     return state;
   }
 
@@ -228,6 +291,7 @@
     context,
     designContext,
     clear,
-    blankPlot
+    blankPlot,
+    persistence: () => clone(persistenceState)
   };
 })();
