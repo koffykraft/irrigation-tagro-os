@@ -30,6 +30,8 @@
   }
 
   function stopMovePanel() {
+    const panel = $('#manipPanel');
+    if (!panel?.classList.contains('show')) return;
     document.getElementById('closeManip')?.click();
   }
 
@@ -52,6 +54,18 @@
     step.value = previous;
     return true;
   }
+
+  /* A manipulation panel belongs to the current selection/operation only.
+     Close it before another object is selected or another operation panel is opened. */
+  workspace.addEventListener('click', event => {
+    const object = event.target.closest?.('.tagro-existing,.draw-object');
+    if (object) {
+      stopMovePanel();
+      return;
+    }
+    const action = event.target.closest?.('#editSelected,#labelSelected,#connectSelected,#emitterSelected,#layoutSelected');
+    if (action) stopMovePanel();
+  }, true);
 
   document.addEventListener('keydown', event => {
     if (!desktop.matches || isTypingTarget(event.target)) return;
