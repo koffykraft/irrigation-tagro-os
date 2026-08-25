@@ -29,6 +29,11 @@ if (pageType === 'workbench') {
   }
 }
 
+if (pageType === 'info') {
+  const productNote = document.querySelector('.product-source-note');
+  if (productNote) productNote.textContent = 'Selected verified Jain product references currently available in this build. Image coverage is partial and is not represented as the complete Jain catalogue.';
+}
+
 if (pageType === 'index') {
   const requested = (location.hash || '').slice(1).toLowerCase();
   if (requested === 'field' || requested === 'drawing') {
@@ -80,6 +85,14 @@ shell.innerHTML = `
 document.body.prepend(shell);
 document.body.classList.add('tagro-shell-active');
 document.body.dataset.tagroShellPage = pageType;
+
+const shellMain = shell.querySelector('.tagro-shell-main');
+const composition = document.querySelector('#tagroShellContext');
+if (composition && shellMain) {
+  const shellSave = shell.querySelector('#tagroShellSave');
+  shellMain.insertBefore(composition, shellSave || null);
+  composition.dataset.productionDock = 'shared-shell';
+}
 
 if (pageType === 'info') {
   const guard = document.createElement('script');
