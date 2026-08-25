@@ -31,15 +31,7 @@ async function assertViewport(page, name) {
   const measure = await page.evaluate(() => ({
     innerWidth: window.innerWidth,
     documentWidth: document.documentElement.scrollWidth,
-    bodyWidth: document.body.scrollWidth,
-    shellMainOverflow: (() => {
-      const node = document.querySelector('.tagro-shell-main');
-      return node ? node.scrollWidth >= node.clientWidth : true;
-    })(),
-    ribbonOverflow: (() => {
-      const node = document.querySelector('.tagro-shell-ribbon');
-      return node ? node.scrollWidth >= node.clientWidth : true;
-    })()
+    bodyWidth: document.body.scrollWidth
   }));
   assert(measure.documentWidth <= measure.innerWidth + 2, `${name}: document overflows viewport (${measure.documentWidth} > ${measure.innerWidth})`);
   assert(measure.bodyWidth <= measure.innerWidth + 2, `${name}: body overflows viewport (${measure.bodyWidth} > ${measure.innerWidth})`);
@@ -195,14 +187,11 @@ async function informationStorageFailureGate(browser) {
   const errors = monitor(page);
   await page.goto(`${base}/info.html`, { waitUntil: 'load' });
   await page.waitForSelector('.tagro-appshell');
+  await page.waitForFunction(() => Boolean(document.body.dataset.informationPersistence), null, { timeout: 5000 });
   const toggle = page.getByRole('button', { name: 'Customer details', exact: true });
   if (await toggle.count()) await toggle.click();
-  await page.waitForFunction(() => {
-    const node = document.getElementById('customerName');
-    return node && !node.closest('[hidden]') && getComputedStyle(node).display !== 'none';
-  }).catch(() => {});
   await page.fill('#customerName', 'Storage failure gate');
-  await page.click('#saveNow');
+  await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Save', exact: true }).click();
   await page.waitForFunction(() => /Not saved on device/i.test(document.getElementById('saveState')?.textContent || ''), null, { timeout: 5000 });
   assert(await page.locator('#customerName').inputValue() === 'Storage failure gate', 'Information storage failure: current session value was lost immediately');
   assert(!errors.some(error => error.startsWith('pageerror:')), `Information storage failure caused page exception:\n${errors.join('\n')}`);
