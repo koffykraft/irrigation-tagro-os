@@ -7,6 +7,7 @@ on:
     paths:
       - 'app/environment-v1/**'
       - 'test/environment-v1-smoke.mjs'
+      - 'test/environment-v1-functional.mjs'
       - '.github/workflows/environment-v1-regression.yml'
   workflow_dispatch:
 
@@ -46,6 +47,9 @@ jobs:
 
       - name: Run six-surface browser gate
         run: node test/environment-v1-smoke.mjs
+
+      - name: Run functional page-set gate
+        run: node test/environment-v1-functional.mjs
 
       - name: Upload browser evidence
         if: always()
