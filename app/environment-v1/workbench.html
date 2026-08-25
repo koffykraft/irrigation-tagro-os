@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#ffffff">
+<title>TAGRO Irrigation Workbench</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css">
+<link rel="stylesheet" href="./workbench.css">
+</head>
+<body>
+<div class="page">
+<header class="topbar">
+  <a class="back" href="./index.html" aria-label="Back to Irrigation Environment">←</a>
+  <div class="brand"><b>TAGRO IRRIGATION</b><span>One field · one drawing · one canonical design</span></div>
+  <div class="modes">
+    <button id="fieldMode" class="mode on" type="button">FIELD</button>
+    <button id="drawingMode" class="mode" type="button">DRAWING</button>
+  </div>
+  <div class="spacer"></div>
+  <div id="searchBox" class="search"><input id="searchInput" placeholder="Search or lat,lng"><button id="searchButton" type="button">⌕</button></div>
+  <button id="locateButton" class="iconbtn" type="button" aria-label="Use current location">◎</button>
+  <a class="adviser-link" href="./index.html">ADVISER</a>
+  <button id="workButton" class="workbtn" type="button" aria-label="Open work tools">＋</button>
+</header>
+<main id="workspace" class="workspace">
+  <section id="fieldSurface" class="surface on"><div id="map"></div></section>
+  <section id="drawingSurface" class="surface drawing-wrap">
+    <svg id="drawingCanvas" class="drawing-canvas" viewBox="0 0 1000 700" role="application" aria-label="Canonical irrigation drawing"></svg>
+    <div id="drawingEmpty" class="drawing-empty"><b>FIELD anchors the drawing.</b><span>Draw or locate at least one real field object first.</span></div>
+  </section>
+
+  <aside id="toolDock" class="tool-dock" aria-label="Irrigation work tools">
+    <div class="dock-head"><b>Work tools</b><button id="closeTools" type="button">×</button></div>
+    <div class="tool-grid">
+      <button type="button" data-tool="select"><span>↖</span>Select</button>
+      <button type="button" data-tool="boundary"><span>⬡</span>Boundary</button>
+      <button type="button" data-tool="main"><span>━</span>Main</button>
+      <button type="button" data-tool="submain"><span>━</span>Submain</button>
+      <button type="button" data-tool="lateral"><span>━</span>Lateral</button>
+      <button type="button" data-tool="plant"><span>●</span>Plant</button>
+      <button type="button" data-tool="water_source"><span>◉</span>Water</button>
+      <button type="button" data-tool="path"><span>╱</span>Path</button>
+      <button type="button" data-tool="device"><span>⊙</span>Device</button>
+    </div>
+    <div class="secondary-tools">
+      <button id="measureTool" type="button">↔ Measure</button>
+      <button id="layoutTool" type="button">≡ Layout Laterals</button>
+    </div>
+  </aside>
+
+  <div id="activeChip" class="active-chip">
+    <b id="activeToolName">Select</b><span id="activeToolHint">Click an object</span>
+    <button id="finishTool" type="button">Finish</button><button id="stopTool" class="stop" type="button">Stop</button>
+  </div>
+
+  <aside id="inspector" class="inspector" aria-live="polite">
+    <div class="inspector-head"><div><b id="selectionName">Object</b><span id="selectionMeta"></span></div><button id="closeInspector" type="button">×</button></div>
+    <div id="selectionMeasure" class="measure"></div>
+    <div class="inspector-actions">
+      <button id="editSelected" class="primary" type="button">Edit</button>
+      <button id="duplicateSelected" type="button">Duplicate</button>
+      <button id="layoutSelected" type="button">Layout</button>
+      <button id="deleteSelected" class="danger" type="button">Delete</button>
+    </div>
+  </aside>
+
+  <aside id="layoutPanel" class="layout-panel">
+    <div class="panel-head"><b>Layout Laterals from <span id="layoutSource">Submain</span></b><button id="closeLayout" type="button">×</button></div>
+    <div class="panel-note">Spacing is measured along the selected Submain. Preview first. The created laterals remain ordinary editable canonical lines.</div>
+    <div class="layout-grid">
+      <label>Spacing<input id="layoutSpacing" type="number" min="0.2" step="0.1" value="3"></label>
+      <label>Start along Submain<input id="layoutStart" type="number" min="0" step="0.1" value="0"></label>
+      <label>End along Submain<input id="layoutEnd" type="number" min="0" step="0.1" placeholder="full length"></label>
+      <label>Lateral length<input id="layoutLength" type="number" min="0.5" step="0.5" value="20"></label>
+      <label>Bearing<input id="layoutBearing" type="number" min="0" max="359.9" step="0.1" value="90"></label>
+      <label>Runs<select id="layoutSide"><option value="one">One direction</option><option value="both">Both directions</option></select></label>
+      <label class="wide">Clip to<select id="layoutClip"><option value="">None · free run</option></select></label>
+      <label class="wide check"><input id="layoutSkip" type="checkbox" checked> Skip existing lateral feed points</label>
+    </div>
+    <div class="panel-actions"><button id="flipLayout" type="button">Flip 180°</button><button id="previewLayout" type="button">Preview</button><button id="createLayout" class="primary" type="button" disabled>Create</button><button id="clearLayout" type="button">Clear</button></div>
+    <div id="layoutStatus" class="panel-status">Select a Submain, then preview.</div>
+  </aside>
+
+  <aside id="measurePanel" class="measure-panel">
+    <div class="panel-head"><b>Distance / spacing</b><button id="closeMeasure" type="button">×</button></div>
+    <div id="measureText" class="panel-note">Click the first object, then another object.</div>
+    <div class="panel-actions"><button id="newMeasure" type="button">New reference</button><button id="familyMeasure" type="button">Family spacings</button></div>
+  </aside>
+
+  <div id="proposalChip" class="proposal-chip"><div><b id="proposalTitle">Proposed geometry</b><span id="proposalNote">Preview only</span></div><button id="acceptProposal" class="primary" type="button">Use geometry</button><button id="clearProposal" type="button">Clear</button></div>
+  <div id="status" class="status">FIELD · blank job · nothing assumed</div>
+</main>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.js"></script>
+<script src="./environment-learning.js"></script>
+<script src="./spatial-store.js"></script>
+<script src="./spatial-proposal.js"></script>
+<script src="./workbench.js"></script>
+</body>
+</html>
