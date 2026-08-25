@@ -27,14 +27,73 @@
 
   const now = () => new Date().toISOString();
   const clone = value => JSON.parse(JSON.stringify(value));
+  const volatileStates = new Map();
+  let volatileActiveJob = null;
+  let persistenceState = { ok: true, mode: "localStorage", error: null, at: now() };
+
+  function persistenceEvent(ok, error = null) {
+    persistenceState = {
+      ok,
+      mode: ok ? "localStorage" : "memory-fallback",
+      error: error ? String(error?.message || error) : null,
+      at: now()
+    };
+    window.dispatchEvent(new CustomEvent(ok ? "tagro:spatial-save-ok" : "tagro:spatial-save-error", {
+      detail: clone(persistenceState)
+    }));
+  }
+
+  function safeGet(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (error) {
+      persistenceEvent(false, error);
+      return null;
+    }
+  }
+
+  function safeSet(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      persistenceEvent(true);
+      return true;
+    } catch (error) {
+      persistenceEvent(false, error);
+      return false;
+    }
+  }
+
+  function safeRemove(key) {
+    try {
+      localStorage.removeItem(key);
+      persistenceEvent(true);
+      return true;
+    } catch (error) {
+      persistenceEvent(false, error);
+      return false;
+    }
+  }
 
   function jobId() {
-    if (window.TAGROLearning?.ensureJobId) return window.TAGROLearning.ensureJobId();
+    try {
+      if (window.TAGROLearning?.ensureJobId) {
+        const learned = window.TAGROLearning.ensureJobId();
+        if (learned) {
+          volatileActiveJob = learned;
+          return learned;
+        }
+      }
+    } catch {}
+
     const key = `${STORAGE_PREFIX}:active-job`;
-    const existing = localStorage.getItem(key);
-    if (existing) return existing;
+    const existing = safeGet(key) || volatileActiveJob;
+    if (existing) {
+      volatileActiveJob = existing;
+      return existing;
+    }
     const id = `job_${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
-    localStorage.setItem(key, id);
+    volatileActiveJob = id;
+    safeSet(key, id);
     return id;
   }
 
@@ -56,19 +115,30 @@
   }
 
   function read(id = jobId()) {
+    const volatile = volatileStates.get(id);
+    if (volatile) return clone(volatile);
     try {
-      const parsed = JSON.parse(localStorage.getItem(storageKey(id)) || "null");
-      if (parsed?.contract === CONTRACT && Array.isArray(parsed.objects)) return parsed;
+      const parsed = JSON.parse(safeGet(storageKey(id)) || "null");
+      if (parsed?.contract === CONTRACT && Array.isArray(parsed.objects)) {
+        parsed.relationships = Array.isArray(parsed.relationships) ? parsed.relationships : [];
+        parsed.events = Array.isArray(parsed.events) ? parsed.events : [];
+        return parsed;
+      }
     } catch {}
     return emptyState(id);
   }
 
   function write(state) {
     const next = clone(state);
+    next.relationships = Array.isArray(next.relationships) ? next.relationships : [];
+    next.events = Array.isArray(next.events) ? next.events : [];
     next.revision = Number(next.revision || 0) + 1;
     next.updated_at = now();
-    localStorage.setItem(storageKey(next.job_id), JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent("tagro:spatial-change", { detail: clone(next) }));
+    volatileStates.set(next.job_id, clone(next));
+    safeSet(storageKey(next.job_id), JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent("tagro:spatial-change", {
+      detail: { ...clone(next), persistence: clone(persistenceState) }
+    }));
     return next;
   }
 
@@ -91,6 +161,33 @@
     if (state.events.length > 300) state.events = state.events.slice(-300);
   }
 
+  function networkRelationId(childId) {
+    return `rel_network_parent_${childId}`;
+  }
+
+  function syncNetworkRelation(state, childId, parentId, source = "user") {
+    state.relationships = (state.relationships || []).filter(rel => !(rel?.role === "network_parent" && rel?.to === childId));
+    if (!parentId) return;
+    state.relationships.push({
+      id: networkRelationId(childId),
+      from: parentId,
+      to: childId,
+      type: "feeds",
+      role: "network_parent",
+      state: "confirmed",
+      source,
+      updated_at: now()
+    });
+  }
+
+  function rebuildNetworkRelationships(state) {
+    state.relationships = (state.relationships || []).filter(rel => rel?.role !== "network_parent");
+    state.objects.forEach(object => {
+      const parentId = object?.properties?.network?.parent_id || null;
+      if (parentId) syncNetworkRelation(state, object.id, parentId, object.properties?.network?.parent_source || "rebuild");
+    });
+  }
+
   function addObject(kind, geometry, properties = {}, objectState = "described") {
     const state = read();
     const id = nextId(kind, state);
@@ -110,7 +207,9 @@
       updated_at: now()
     };
     state.objects.push(object);
-    addEvent(state, "spatial.object.created", [id], { kind, state: objectState });
+    const parentId = object?.properties?.network?.parent_id || null;
+    if (parentId) syncNetworkRelation(state, id, parentId, object.properties?.network?.parent_source || "object_create");
+    addEvent(state, "spatial.object.created", [id], { kind, state: objectState, parent_id: parentId });
     write(state);
     return clone(object);
   }
@@ -137,6 +236,10 @@
     if (!object) return null;
     object.properties = { ...(object.properties || {}), ...clone(patch) };
     object.updated_at = now();
+    if (Object.prototype.hasOwnProperty.call(patch, "network")) {
+      const parentId = object.properties?.network?.parent_id || null;
+      syncNetworkRelation(state, id, parentId, object.properties?.network?.parent_source || "property_update");
+    }
     addEvent(state, "spatial.properties.updated", [id], { keys: Object.keys(patch) });
     write(state);
     return clone(object);
@@ -148,9 +251,14 @@
     const changed = [];
     state.objects.forEach(object => {
       if (!wanted.has(object.id)) return;
+      const beforeParent = object?.properties?.network?.parent_id || null;
       const next = mutator(clone(object));
       if (!next) return;
       Object.assign(object, next, { updated_at: now() });
+      const afterParent = object?.properties?.network?.parent_id || null;
+      if (beforeParent !== afterParent || next?.properties?.network) {
+        syncNetworkRelation(state, object.id, afterParent, object.properties?.network?.parent_source || "batch_update");
+      }
       changed.push(object.id);
     });
     if (!changed.length) return [];
@@ -160,17 +268,29 @@
   }
 
   function setParent(ids, parentId, source = "user") {
+    const state = read();
     const childIds = Array.isArray(ids) ? ids : [ids];
-    return updateMany(childIds, object => ({
-      properties: {
+    const wanted = new Set(childIds.filter(Boolean));
+    if (parentId && !state.objects.some(object => object.id === parentId)) return [];
+    const changed = [];
+    state.objects.forEach(object => {
+      if (!wanted.has(object.id)) return;
+      object.properties = {
         ...(object.properties || {}),
         network: {
           ...(object.properties?.network || {}),
           parent_id: parentId || null,
           parent_source: parentId ? source : null
         }
-      }
-    }), "spatial.network.parent_set", { parent_id: parentId || null, source });
+      };
+      object.updated_at = now();
+      syncNetworkRelation(state, object.id, parentId || null, source);
+      changed.push(object.id);
+    });
+    if (!changed.length) return [];
+    addEvent(state, "spatial.network.parent_set", changed, { parent_id: parentId || null, source });
+    write(state);
+    return state.objects.filter(object => changed.includes(object.id)).map(clone);
   }
 
   function removeObject(id) {
@@ -178,14 +298,17 @@
     const before = state.objects.length;
     state.objects = state.objects.filter(item => item.id !== id);
     if (state.objects.length === before) return false;
-    state.relationships = state.relationships.filter(rel => rel.from !== id && rel.to !== id);
+    state.relationships = (state.relationships || []).filter(rel => rel.from !== id && rel.to !== id);
+    const orphaned = [];
     state.objects.forEach(object => {
       if (object.properties?.network?.parent_id === id) {
         object.properties.network.parent_id = null;
         object.properties.network.parent_source = null;
+        syncNetworkRelation(state, object.id, null, "parent_removed");
+        orphaned.push(object.id);
       }
     });
-    addEvent(state, "spatial.object.removed", [id], {});
+    addEvent(state, "spatial.object.removed", [id], { orphaned_children: orphaned });
     write(state);
     return true;
   }
@@ -215,7 +338,9 @@
       updated_at: now()
     };
     state.objects.push(copy);
-    addEvent(state, "spatial.object.duplicated", [source.id, newId], {});
+    const parentId = copy?.properties?.network?.parent_id || null;
+    if (parentId) syncNetworkRelation(state, newId, parentId, "duplicate");
+    addEvent(state, "spatial.object.duplicated", [source.id, newId], { parent_id: parentId });
     write(state);
     return clone(copy);
   }
@@ -223,15 +348,19 @@
   function replaceAll(objects, reason = "replace") {
     const state = read();
     state.objects = clone(Array.isArray(objects) ? objects : []);
+    rebuildNetworkRelationships(state);
     addEvent(state, "spatial.objects.replaced", state.objects.map(object => object.id), { reason });
     return write(state);
   }
 
   function clear() {
     const id = jobId();
-    localStorage.removeItem(storageKey(id));
+    volatileStates.delete(id);
+    safeRemove(storageKey(id));
     const state = emptyState(id);
-    window.dispatchEvent(new CustomEvent("tagro:spatial-change", { detail: clone(state) }));
+    window.dispatchEvent(new CustomEvent("tagro:spatial-change", {
+      detail: { ...clone(state), persistence: clone(persistenceState) }
+    }));
     return state;
   }
 
@@ -252,6 +381,7 @@
     removeObject,
     duplicateObject,
     replaceAll,
-    clear
+    clear,
+    persistence: () => clone(persistenceState)
   };
 })();
