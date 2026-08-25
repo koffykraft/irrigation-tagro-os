@@ -14,6 +14,21 @@ const PAGES = [
 ];
 let lastHeight = '';
 
+const viewport = document.querySelector('meta[name="viewport"]');
+if (viewport && /user-scalable\s*=\s*no/i.test(viewport.content)) {
+  viewport.content = 'width=device-width,initial-scale=1,viewport-fit=cover';
+}
+
+if (pageType === 'workbench') {
+  const deviceTool = document.querySelector('#toolDock [data-tool="device"]');
+  if (deviceTool) {
+    const symbol = deviceTool.querySelector('span');
+    deviceTool.replaceChildren();
+    if (symbol) deviceTool.append(symbol);
+    deviceTool.append(document.createTextNode('Emitter / sprinkler'));
+  }
+}
+
 if (pageType === 'index') {
   const requested = (location.hash || '').slice(1).toLowerCase();
   if (requested === 'field' || requested === 'drawing') {
@@ -65,6 +80,14 @@ shell.innerHTML = `
 document.body.prepend(shell);
 document.body.classList.add('tagro-shell-active');
 document.body.dataset.tagroShellPage = pageType;
+
+if (pageType === 'info') {
+  const guard = document.createElement('script');
+  guard.src = './info-persistence-guard.js';
+  guard.async = false;
+  guard.dataset.tagroPersistenceGuard = 'information';
+  document.body.append(guard);
+}
 
 const nav = $('#tagroShellNav');
 for (const [id,label] of PAGES) {
@@ -181,8 +204,7 @@ function fieldSearch(ribbon) {
 
 function renderWorkbenchTools(ribbon, surface) {
   if (surface === 'field') fieldSearch(ribbon);
-
-  const common = [
+  append(ribbon, [
     tool('Select','select'),
     ...(surface === 'field' ? [tool('Boundary','boundary')] : []),
     tool('Main','main'),
@@ -193,8 +215,7 @@ function renderWorkbenchTools(ribbon, surface) {
     byId('Ruler','measureTool'),
     byId('Layout laterals','layoutTool'),
     byId('All tools','workButton')
-  ];
-  append(ribbon, common);
+  ]);
 }
 
 function renderIndexTools(ribbon, surface) {
@@ -208,7 +229,6 @@ function renderIndexTools(ribbon, surface) {
     ]);
     return;
   }
-
   if (surface === 'design') {
     append(ribbon, [
       command('Summary', () => scrollToId('designTop')),
@@ -220,7 +240,6 @@ function renderIndexTools(ribbon, surface) {
     ]);
     return;
   }
-
   if (surface === 'materials') {
     append(ribbon, [
       command('BOM', () => scrollToId('materialsList')),
@@ -315,6 +334,6 @@ window.addEventListener('tagro:job-info-change', () => { syncJob(); syncSave(); 
 
 const saveSource = pageType === 'info' ? $('#saveState') : pageType === 'workbench' ? $('#tagroSaveIndicator') : null;
 if (saveSource) {
-  new MutationObserver(syncSave).observe(saveSource, { childList:true, characterData:true,subtree:true });
+  new MutationObserver(syncSave).observe(saveSource, { childList:true, characterData:true, subtree:true });
 }
 })();
