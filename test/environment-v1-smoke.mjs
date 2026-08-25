@@ -33,6 +33,10 @@ function staticReferenceGate() {
   assert(!missing.length, `Missing local page dependency/route:\n${missing.join('\n')}`);
 }
 
+function shellTab(page, id) {
+  return page.locator(`.tagro-shell-tab[data-shell-page="${id}"]`);
+}
+
 async function openChecked(browser, name, urlPath, check) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
@@ -57,9 +61,9 @@ try {
   await openChecked(browser, 'information', '/info.html', async page => {
     await page.waitForFunction(() => document.querySelector('[data-shell-page="information"]')?.classList.contains('active'));
     assert(await page.locator('#tagroShellJob').count() === 1, 'Information: shared job identity missing');
-    assert(await page.getByRole('button', { name: 'Save', exact: true }).first().isVisible(), 'Information: Save command missing');
-    assert(await page.getByRole('button', { name: 'Add plot', exact: true }).isVisible(), 'Information: Add plot command missing');
-    assert(await page.getByRole('button', { name: 'Measure on map', exact: true }).isVisible(), 'Information: Measure on map command missing');
+    assert(await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Save', exact: true }).isVisible(), 'Information: Save command missing');
+    assert(await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Add plot', exact: true }).isVisible(), 'Information: Add plot command missing');
+    assert(await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Measure on map', exact: true }).isVisible(), 'Information: Measure on map command missing');
   });
 
   await openChecked(browser, 'field', '/workbench.html?view=field', async page => {
@@ -82,9 +86,9 @@ try {
       return count;
     });
     assert(mutationCount >= 0 && mutationCount <= 3, `Field: status is still mutating while idle (${mutationCount} changes/1.2s)`);
-    assert(await page.getByRole('button', { name: 'Boundary', exact: true }).first().isVisible(), 'Field: Boundary command missing');
-    assert(await page.getByRole('button', { name: 'Main', exact: true }).first().isVisible(), 'Field: Main command missing');
-    assert(await page.getByRole('button', { name: 'Ruler', exact: true }).first().isVisible(), 'Field: Ruler command missing');
+    assert(await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Boundary', exact: true }).isVisible(), 'Field: Boundary command missing');
+    assert(await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Main', exact: true }).isVisible(), 'Field: Main command missing');
+    assert(await page.locator('#tagroShellRibbon').getByRole('button', { name: 'Ruler', exact: true }).isVisible(), 'Field: Ruler command missing');
   });
 
   await openChecked(browser, 'drawing', '/workbench.html?view=drawing', async page => {
@@ -119,19 +123,19 @@ try {
   const page = await context.newPage();
   await page.goto(`${base}/info.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.tagro-appshell');
-  await page.getByRole('button', { name: 'Field', exact: true }).click();
+  await shellTab(page, 'field').click();
   await page.waitForURL(/workbench\.html\?view=field/, { timeout: 15000 });
   await page.waitForSelector('.tagro-appshell');
-  await page.getByRole('button', { name: 'Drawing', exact: true }).click();
+  await shellTab(page, 'drawing').click();
   await page.waitForFunction(() => new URL(location.href).searchParams.get('view') === 'drawing');
-  await page.getByRole('button', { name: 'Adviser', exact: true }).click();
+  await shellTab(page, 'adviser').click();
   await page.waitForURL(/index\.html#adviser/, { timeout: 15000 });
   await page.waitForSelector('.tagro-appshell');
-  await page.getByRole('button', { name: 'Design', exact: true }).click();
+  await shellTab(page, 'design').click();
   await page.waitForFunction(() => location.hash === '#design');
-  await page.getByRole('button', { name: 'Materials', exact: true }).click();
+  await shellTab(page, 'materials').click();
   await page.waitForFunction(() => location.hash === '#materials');
-  await page.getByRole('button', { name: 'Information', exact: true }).click();
+  await shellTab(page, 'information').click();
   await page.waitForURL(/info\.html/, { timeout: 15000 });
   await context.close();
 
