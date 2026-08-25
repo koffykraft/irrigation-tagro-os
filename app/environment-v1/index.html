@@ -21,6 +21,7 @@
     </header>
 
     <nav id="surfaceMenu" class="surface-menu" aria-label="Environment surfaces">
+      <button type="button" onclick="location.href='./info.html'"><b>INFO</b><span>Optional needs, crops, water, pump, site context</span></button>
       <button type="button" data-open-surface="field"><b>FIELD</b><span>Map, reality, plants, water, access</span></button>
       <button type="button" data-open-surface="drawing"><b>DRAWING</b><span>Same objects, clean engineering view</span></button>
       <button type="button" data-open-surface="adviser"><b>ADVISER</b><span>Talk, ask, compare, propose</span></button>
@@ -126,7 +127,8 @@
       </div>
       <div class="work-actions">
         <button id="finishDraft" type="button" hidden>Finish shape</button>
-        <button type="button" onclick="location.href='./field-map.html'">Open real FIELD map</button>
+        <button type="button" onclick="location.href='./info.html'">Open job information</button>
+        <button type="button" onclick="location.href='./workbench.html'">Open real FIELD / DRAWING</button>
         <button id="openDrawingAction" type="button">Open quick Drawing</button>
         <button id="tellStoryAction" type="button">Tell field story</button>
       </div>
@@ -152,6 +154,7 @@
   <script src="./environment-learning.js"></script>
   <script src="./spatial-store.js"></script>
   <script src="./spatial-proposal.js"></script>
+  <script src="./job-info.js"></script>
   <script src="./environment-learning-bridge.js"></script>
   <script src="./environment.js"></script>
   <script src="./environment-spatial-review.js"></script>
