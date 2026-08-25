@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#ffffff">
 <title>TAGRO Irrigation · Field / Drawing</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css">
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.0/dist/leaflet-geoman.css">
 <link rel="stylesheet" href="./workbench.css">
 <link rel="stylesheet" href="./workbench-v2.css">
 <link rel="stylesheet" href="./workbench-desktop-ux.css">
@@ -15,14 +15,14 @@
 <body>
 <div class="page">
 <header class="topbar">
-  <a class="back" href="./index.html" aria-label="Back to Irrigation Design">←</a>
+  <a class="back" href="./info.html" aria-label="Back to project information">←</a>
   <div class="brand"><b>TAGRO IRRIGATION</b><span>Irrigation Design</span></div>
   <div class="modes"><button id="fieldMode" class="mode on" type="button">FIELD</button><button id="drawingMode" class="mode" type="button">DRAWING</button></div>
   <div class="spacer"></div>
   <div id="searchBox" class="search"><input id="searchInput" placeholder="Search place or lat,lng"><button id="searchButton" type="button">⌕</button></div>
   <button id="locateButton" class="iconbtn" type="button" aria-label="Use current location">◎</button>
   <a class="adviser-link" href="./info.html">INFO</a>
-  <a class="adviser-link" href="./index.html">ADVISER</a>
+  <a class="adviser-link" href="./index.html#adviser">ADVISER</a>
   <button id="workButton" class="workbtn" type="button" aria-label="Open all tools">＋</button>
 </header>
 <main id="workspace" class="workspace">
@@ -82,7 +82,7 @@
 
   <aside id="connectPanel" class="connect-panel"><div class="panel-head"><b>Network connection</b><button id="closeConnect" type="button">×</button></div><div class="panel-note">Assign the upstream parent for the selected object or objects.</div><label>Parent<select id="parentSelect"></select></label><div class="batch-actions"><button id="applyParent" class="primary">Connect</button><button id="clearParent">Clear connection</button></div><div id="connectStatus" class="panel-status"></div></aside>
 
-  <aside id="emitterPanel" class="emitter-panel"><div class="panel-head"><b>Emitter / application device</b><button id="closeEmitter" type="button">×</button></div><div class="panel-note">Apply device information to the selected lateral or laterals.</div><div class="mini-grid"><label>Type<select id="emitType"><option value="dripper">Dripper / emitter</option><option value="micro-sprinkler">Micro sprinkler</option><option value="mini-sprinkler">Mini sprinkler</option><option value="jet">Jet / spray jet</option><option value="bubbler">Bubbler</option><option value="mister">Mister</option><option value="fogger">Fogger</option><option value="other">Other</option></select></label><label>Spacing m<input id="emitSpacing" type="number" min="0.1" step="0.1" value="10"></label><label>Discharge LPH<input id="emitDischarge" type="number" min="0.1" step="0.1" value="8"></label><label>Nominal head m<input id="emitHead" type="number" min="0.1" step="0.1" value="10"></label></div><label>Product reference<input id="emitProduct" type="text" maxlength="100" placeholder="optional product reference"></label><div class="batch-actions"><button id="applyEmitter" class="primary">Apply</button><button id="lookupEmitter">Product lookup</button></div><div id="emitterStatus" class="panel-status"></div></aside>
+  <aside id="emitterPanel" class="emitter-panel"><div class="panel-head"><b>Emitter / sprinkler</b><button id="closeEmitter" type="button">×</button></div><div class="panel-note">Apply irrigation outlet information to the selected lateral or laterals.</div><div class="mini-grid"><label>Type<select id="emitType"><option value="dripper">Dripper / emitter</option><option value="micro-sprinkler">Micro sprinkler</option><option value="mini-sprinkler">Mini sprinkler</option><option value="jet">Jet / spray jet</option><option value="bubbler">Bubbler</option><option value="mister">Mister</option><option value="fogger">Fogger</option><option value="other">Other</option></select></label><label>Spacing (m)<input id="emitSpacing" type="number" min="0.1" step="0.1" value="10"></label><label>Discharge (LPH)<input id="emitDischarge" type="number" min="0.1" step="0.1" value="8"></label><label>Nominal head (m)<input id="emitHead" type="number" min="0.1" step="0.1" value="10"></label></div><label>Product reference<input id="emitProduct" type="text" maxlength="100" placeholder="optional product reference"></label><div class="batch-actions"><button id="applyEmitter" class="primary">Apply</button><button id="lookupEmitter">Product lookup</button></div><div id="emitterStatus" class="panel-status"></div></aside>
 
   <aside id="layoutPanel" class="layout-panel"><div class="panel-head"><b>Layout Laterals from <span id="layoutSource">Submain</span></b><button id="closeLayout" type="button">×</button></div><div class="panel-note">Create laterals at a set spacing along the selected submain. Preview before creating.</div><div class="layout-grid"><label>Spacing<input id="layoutSpacing" type="number" min="0.2" step="0.1" value="3"></label><label>Start along Submain<input id="layoutStart" type="number" min="0" step="0.1" value="0"></label><label>End along Submain<input id="layoutEnd" type="number" min="0" step="0.1" placeholder="full length"></label><label>Lateral length<input id="layoutLength" type="number" min="0.5" step="0.5" value="20"></label><label>Bearing<input id="layoutBearing" type="number" min="0" max="359.9" step="0.1" value="90"></label><label>Runs<select id="layoutSide"><option value="one">One direction</option><option value="both">Both directions</option></select></label><label class="wide">Clip to<select id="layoutClip"><option value="">None · free run</option></select></label><label class="wide check"><input id="layoutSkip" type="checkbox" checked> Skip existing lateral feed points</label></div><div class="panel-actions"><button id="flipLayout" type="button">Flip 180°</button><button id="previewLayout" type="button">Preview</button><button id="createLayout" class="primary" type="button" disabled>Create</button><button id="clearLayout" type="button">Clear</button></div><div id="layoutStatus" class="panel-status">Select a Submain, then preview.</div></aside>
 
@@ -93,15 +93,16 @@
 </main>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.0/dist/leaflet-geoman.min.js"></script>
+<script src="./workbench-runtime-guard.js"></script>
 <script src="./environment-learning.js"></script>
 <script src="./spatial-store.js"></script>
 <script src="./job-info.js"></script>
 <script src="./spatial-proposal.js"></script>
 <script src="./workbench-v2.js"></script>
 <script type="module" src="./workbench-shell.js"></script>
-<script src="./workbench-desktop-ux.js"></script>
+<script src="./workbench-direct-controls.js"></script>
 <script src="./workbench-info-entry.js"></script>
-<script src="./shared-shell.js"></script>
+<script type="module" src="./shared-shell.js"></script>
 </body>
 </html>
