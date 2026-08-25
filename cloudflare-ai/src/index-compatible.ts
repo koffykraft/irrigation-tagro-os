@@ -195,6 +195,13 @@ export default {
     const url = new URL(request.url);
     const adaptedEnv = env?.AI ? { ...env, AI: adaptAnthropicAi(env.AI) } : env;
 
+    /* Root is the neutral project entry. Serve it before any client-side surface renders. */
+    if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/" && env?.ASSETS) {
+      const target = new URL("/info.html", url);
+      const headers = new Headers(request.headers);
+      return env.ASSETS.fetch(new Request(target.toString(), { method: request.method, headers }));
+    }
+
     if (url.pathname === "/health") return healthWithPersistence(request, env, adaptedEnv);
     if (url.pathname === "/api/ai/provider-ping") return providerPing(env);
     if (url.pathname === "/api/ai/json-ping") return jsonPing(env);
