@@ -5,17 +5,22 @@
   const STORAGE_PREFIX = "tagro.irrigation.spatial.v1";
   const PREFIX = {
     boundary: "B",
+    plot: "PL",
+    section: "SEC",
+    crop_area: "CROP",
     main: "M",
     submain: "S",
     lateral: "L",
     plant: "P",
     water_source: "W",
+    pump: "PU",
+    high_point: "HP",
+    low_point: "LP",
     path: "PATH",
     device: "D",
     valve: "V",
     filter: "F",
     venturi: "VT",
-    pump: "PU",
     tank: "T",
     note: "N"
   };
@@ -83,7 +88,7 @@
       actor: "anonymous_job_holder",
       occurred_at: now()
     });
-    if (state.events.length > 250) state.events = state.events.slice(-250);
+    if (state.events.length > 300) state.events = state.events.slice(-300);
   }
 
   function addObject(kind, geometry, properties = {}, objectState = "described") {
@@ -137,12 +142,49 @@
     return clone(object);
   }
 
+  function updateMany(ids, mutator, eventType = "spatial.objects.batch_updated", payload = {}) {
+    const state = read();
+    const wanted = new Set(Array.isArray(ids) ? ids : []);
+    const changed = [];
+    state.objects.forEach(object => {
+      if (!wanted.has(object.id)) return;
+      const next = mutator(clone(object));
+      if (!next) return;
+      Object.assign(object, next, { updated_at: now() });
+      changed.push(object.id);
+    });
+    if (!changed.length) return [];
+    addEvent(state, eventType, changed, payload);
+    write(state);
+    return state.objects.filter(object => changed.includes(object.id)).map(clone);
+  }
+
+  function setParent(ids, parentId, source = "user") {
+    const childIds = Array.isArray(ids) ? ids : [ids];
+    return updateMany(childIds, object => ({
+      properties: {
+        ...(object.properties || {}),
+        network: {
+          ...(object.properties?.network || {}),
+          parent_id: parentId || null,
+          parent_source: parentId ? source : null
+        }
+      }
+    }), "spatial.network.parent_set", { parent_id: parentId || null, source });
+  }
+
   function removeObject(id) {
     const state = read();
     const before = state.objects.length;
     state.objects = state.objects.filter(item => item.id !== id);
     if (state.objects.length === before) return false;
     state.relationships = state.relationships.filter(rel => rel.from !== id && rel.to !== id);
+    state.objects.forEach(object => {
+      if (object.properties?.network?.parent_id === id) {
+        object.properties.network.parent_id = null;
+        object.properties.network.parent_source = null;
+      }
+    });
     addEvent(state, "spatial.object.removed", [id], {});
     write(state);
     return true;
@@ -205,6 +247,8 @@
     addObject,
     updateGeometry,
     updateProperties,
+    updateMany,
+    setParent,
     removeObject,
     duplicateObject,
     replaceAll,
