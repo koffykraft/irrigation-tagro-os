@@ -1,7 +1,7 @@
 window.TAGROProductMediaSources = {
   contract: 'tagro-jain-product-media-sources-v1',
   status: 'IMAGE_ASSETS_AVAILABLE_PARTIAL',
-  rule: 'Product media is a presentation/evidence projection. Product images and sales copy may not override engineering requirements, manufacturer evidence, price provenance or stock truth.',
+  rule: 'Product media is a presentation/evidence projection. Product images and displayed facts may not override engineering requirements, manufacturer evidence, price provenance or stock truth.',
   source_root: '/jain-irrigation-agent/Product Files_JAIN',
   products: [
     {
@@ -15,12 +15,12 @@ window.TAGROProductMediaSources = {
       image_archive: 'jain_drip_images.zip',
       image_asset: './assets/jain-products-web/j-sc-pc-plus.png',
       pitch: {
-        label: 'Pressure-compensating · take-apart emitter',
-        short: 'A serviceable PC emitter for jobs where pressure variation, terrain or longer runs make uniform discharge more valuable.',
-        facts: ['2.2 / 4.2 / 8.2 LPH', '0.8–3.0 kg/cm²', '130 micron filtration', 'Take-apart · self-cleaning'],
-        good_for: ['Orchards and fruit crops', 'Undulating or sloping ground', 'Longer lateral runs', 'Nursery / greenhouse uses'],
-        watch: 'Do not pay for pressure compensation merely because it is available. On a short, level run a simpler emitter may be sufficient.',
-        compare: { type: 'PC, take-apart', pressure: '0.8–3.0 kg/cm²', discharge: '2.2 / 4.2 / 8.2 LPH', service: 'Can be opened/cleaned', terrain: 'Strong candidate when pressure varies' }
+        label: 'Pressure-compensating online emitter',
+        short: 'Take-apart, self-cleaning online emitter.',
+        facts: ['2.2 / 4.2 / 8.2 LPH', '0.8–3.0 kg/cm²', '130 micron filtration', '2.9 mm punch · 4 mm extension tube'],
+        applications: ['Open-field orchards, fruit crops and vegetables', 'Nurseries, pot and greenhouse irrigation', 'Large sections and longer lateral runs', 'Undulating terrain and steep slopes', 'Applications where emitter cleaning is required'],
+        service: 'Take-apart · self-cleaning',
+        compare: { type: 'PC, take-apart', pressure: '0.8–3.0 kg/cm²', discharge: '2.2 / 4.2 / 8.2 LPH', filtration: '130 micron', service: 'Take-apart; self-cleaning', applications: 'Orchards, fruit crops, vegetables, nurseries/greenhouses; longer or undulating runs' }
       }
     },
     {
@@ -35,11 +35,11 @@ window.TAGROProductMediaSources = {
       image_asset: './assets/jain-products-web/j-loc.png',
       pitch: {
         label: 'Take-apart online emitter',
-        short: 'A simple serviceable online emitter that can suit tree crops where several outlet points around the root zone are useful.',
-        facts: ['2 / 4 / 8 / 15 LPH', 'Nominal 1.0 kg/cm²', '130 micron filtration', 'Take-apart · non-PC'],
-        good_for: ['Fruit orchards', 'Multiple emitters around a tree', 'Simple online drip layouts', 'Horizontal or vertical installation'],
-        watch: 'It is not pressure compensating. Pressure variation across the field still has to be checked; the 15 LPH option especially needs lateral-flow review.',
-        compare: { type: 'Non-PC, take-apart', pressure: 'Nominal 1.0 kg/cm²', discharge: '2 / 4 / 8 / 15 LPH', service: 'Can be opened/cleaned', terrain: 'Best compared carefully when pressure varies' }
+        short: 'Take-apart online emitter for point-source drip applications.',
+        facts: ['2 / 4 / 8 / 15 LPH', 'Nominal 1.0 kg/cm²', '130 micron filtration', '2.9 mm punch · 4 mm extension tube'],
+        applications: ['Fruit orchards', 'Multiple drippers around a tree root zone', 'Horizontal or vertical installation'],
+        service: 'Take-apart',
+        compare: { type: 'Non-PC, take-apart', pressure: 'Nominal 1.0 kg/cm²', discharge: '2 / 4 / 8 / 15 LPH', filtration: '130 micron', service: 'Take-apart', applications: 'Fruit orchards; multiple drippers around tree root zone; horizontal or vertical installation' }
       }
     },
     {
@@ -54,11 +54,11 @@ window.TAGROProductMediaSources = {
       image_asset: './assets/jain-products-web/turbo-pc.png',
       pitch: {
         label: 'PC / PCNL online emitter',
-        short: 'A broad-range pressure-compensating emitter family, including a non-leakage option for pulse-style applications.',
-        facts: ['2 / 4 / 8 / 24 LPH', '0.5–4.0 kg/cm²', '120 mesh / 130 micron', 'PC and PCNL variants'],
-        good_for: ['Orchards and vineyards', 'Harsh or undulating topography', 'Pulse irrigation / PCNL use', 'Greenhouse and nursery applications'],
-        watch: 'PC does not remove the need for hydraulic sizing or filtration. Compare the added complexity/cost with the actual pressure variation and required discharge.',
-        compare: { type: 'PC / PCNL, sealed', pressure: '0.5–4.0 kg/cm²', discharge: '2 / 4 / 8 / 24 LPH', service: 'Factory sealed', terrain: 'Broad pressure range; useful on variable terrain' }
+        short: 'Pressure-compensating online emitter family with PC and PCNL variants.',
+        facts: ['2 / 4 / 8 / 24 LPH', '0.5–4.0 kg/cm²', '120 mesh / 130 micron', 'PCNL opens 0.3 · closes 0.2 kg/cm²'],
+        applications: ['Orchards and vineyards', 'Greenhouses and nurseries', 'Landscape irrigation', 'Pulse irrigation / PCNL applications', 'Soilless culture', 'Harsh topography', 'Subsurface installation'],
+        service: 'Factory sealed',
+        compare: { type: 'PC / PCNL, sealed', pressure: '0.5–4.0 kg/cm²', discharge: '2 / 4 / 8 / 24 LPH', filtration: '120 mesh / 130 micron', service: 'Factory sealed', applications: 'Orchards, vineyards, greenhouse/nursery, landscape, pulse irrigation, soilless and subsurface applications' }
       }
     },
     {
