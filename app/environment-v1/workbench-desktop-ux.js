@@ -5,6 +5,8 @@
   if (!workspace) return;
   const $ = selector => document.querySelector(selector);
   const desktop = window.matchMedia('(min-width:721px)');
+  let autoMoveSignature = '';
+  let autoMoveBusy = false;
 
   const TOOL_GROUPS = [
     { label: 'FIELD', tools: [
@@ -31,7 +33,7 @@
   const quick = document.createElement('div');
   quick.id = 'desktopToolStrip';
   quick.className = 'desktop-toolstrip';
-  quick.setAttribute('aria-label', 'Persistent irrigation tools');
+  quick.setAttribute('aria-label', 'Irrigation tools');
 
   function toolButton(kind, label, shortcut = '') {
     const button = document.createElement('button');
@@ -72,8 +74,8 @@
   const more = document.createElement('button');
   more.type = 'button';
   more.className = 'desk-more';
-  more.textContent = 'More…';
-  more.title = 'All work tools';
+  more.textContent = 'More';
+  more.title = 'All tools';
   more.addEventListener('click', () => $('#workButton')?.click());
   quick.append(more);
   workspace.append(quick);
@@ -84,25 +86,42 @@
   selection.setAttribute('aria-label', 'Selected object actions');
   selection.innerHTML = `
     <div class="desk-selection-summary"><b id="deskSelectionName">Selection</b><span id="deskSelectionMeasure"></span></div>
-    <button class="desk-selection-action" type="button" data-selection-proxy="multiToggle" title="Add/remove objects with Ctrl/Shift+click">Multi <span class="desk-shortcut">Ctrl</span></button>
-    <button class="desk-selection-action" type="button" data-selection-proxy="selectSame" title="Select all objects of the same type">Same type <span class="desk-shortcut">Alt+click</span></button>
+    <button class="desk-selection-action" type="button" data-selection-proxy="multiToggle" title="Keep selecting without holding a key">Multi-select</button>
+    <button class="desk-selection-action" type="button" data-selection-proxy="selectSame" title="Select all objects of the same type">Same type</button>
     <button class="desk-selection-action primary" type="button" data-selection-proxy="moveSelected">Move <span class="desk-shortcut">G</span></button>
-    <button class="desk-selection-action" type="button" data-selection-proxy="editSelected">Resize / points <span class="desk-shortcut">E</span></button>
+    <button class="desk-selection-action" type="button" data-selection-proxy="editSelected">Edit shape <span class="desk-shortcut">E</span></button>
     <button class="desk-selection-action" type="button" data-selection-proxy="rotateSelected">Rotate <span class="desk-shortcut">R</span></button>
     <button class="desk-selection-action" type="button" data-selection-proxy="duplicateSelected">Duplicate <span class="desk-shortcut">Ctrl+D</span></button>
     <button class="desk-selection-action" type="button" data-selection-proxy="connectSelected">Connect</button>
-    <button class="desk-selection-action" type="button" data-selection-proxy="labelSelected">Label</button>
+    <button class="desk-selection-action" type="button" data-selection-proxy="labelSelected">Details</button>
     <button class="desk-selection-action" type="button" data-selection-proxy="emitterSelected">Emitter</button>
     <button class="desk-selection-action" type="button" data-selection-proxy="layoutSelected">Layout</button>
     <button class="desk-selection-action danger" type="button" data-selection-proxy="deleteSelected">Delete <span class="desk-shortcut">Del</span></button>
     <button class="desk-selection-action" type="button" data-selection-proxy="closeInspector">Clear</button>
-    <span class="desk-selection-hint">Ctrl/Shift+click adds · double-click edits shape</span>`;
+    <span class="desk-selection-hint">Ctrl/Shift+click selects multiple · double-click edits shape</span>`;
   workspace.append(selection);
+
+  function stopDirectMove() {
+    document.getElementById('closeManip')?.click();
+  }
+
+  function startDirectMove() {
+    const source = document.getElementById('moveSelected');
+    if (!source || source.classList.contains('hidden') || source.disabled) return;
+    source.click();
+    $('#manipPanel')?.classList.remove('show');
+  }
 
   selection.addEventListener('click', event => {
     const button = event.target.closest('[data-selection-proxy]');
     if (!button) return;
-    document.getElementById(button.dataset.selectionProxy)?.click();
+    const id = button.dataset.selectionProxy;
+    if (id === 'moveSelected') {
+      startDirectMove();
+      return;
+    }
+    if (id === 'editSelected' || id === 'rotateSelected') stopDirectMove();
+    document.getElementById(id)?.click();
   });
 
   function syncQuickActive() {
@@ -116,11 +135,29 @@
     });
   }
 
+  function cleanInspectorText() {
+    const meta = $('#selectionMeta');
+    if (meta) meta.textContent = '';
+    const parent = $('#selectionParent');
+    if (parent?.textContent === 'Not explicitly connected') parent.textContent = 'Connection: not assigned';
+    else if (parent?.textContent?.startsWith('Feeds from ')) parent.textContent = `Connected to ${parent.textContent.slice('Feeds from '.length)}`;
+    const status = $('#status');
+    if (status) {
+      status.textContent = status.textContent
+        .replace('blank job · nothing assumed', 'No objects')
+        .replace(/ continuous/g, ' tool');
+    }
+  }
+
   function syncSelection() {
     const inspector = $('#inspector');
     const visible = Boolean(inspector?.classList.contains('show'));
     selection.classList.toggle('show', desktop.matches && visible);
-    if (!visible) return;
+    cleanInspectorText();
+    if (!visible) {
+      autoMoveSignature = '';
+      return;
+    }
 
     const count = $('#multiCount')?.textContent?.trim() || '1 selected';
     const name = $('#selectionName')?.textContent?.trim() || count;
@@ -134,6 +171,16 @@
       button.hidden = source.classList.contains('hidden');
       if (button.dataset.selectionProxy === 'multiToggle') button.classList.toggle('on', source.classList.contains('on'));
     });
+
+    const signature = `${count}|${name}`;
+    if (desktop.matches && signature !== autoMoveSignature && !autoMoveBusy) {
+      autoMoveSignature = signature;
+      autoMoveBusy = true;
+      queueMicrotask(() => {
+        startDirectMove();
+        autoMoveBusy = false;
+      });
+    }
   }
 
   function applyComposition(detail) {
@@ -185,9 +232,9 @@
       return;
     }
     if (hasSelection() && !event.ctrlKey && !event.metaKey && !event.altKey) {
-      if (key === 'e') { event.preventDefault(); clickIfUsable('editSelected'); return; }
-      if (key === 'g') { event.preventDefault(); clickIfUsable('moveSelected'); return; }
-      if (key === 'r') { event.preventDefault(); clickIfUsable('rotateSelected'); return; }
+      if (key === 'e') { event.preventDefault(); stopDirectMove(); clickIfUsable('editSelected'); return; }
+      if (key === 'g') { event.preventDefault(); startDirectMove(); return; }
+      if (key === 'r') { event.preventDefault(); stopDirectMove(); clickIfUsable('rotateSelected'); return; }
       const directions = { ArrowUp: 'north', ArrowDown: 'south', ArrowLeft: 'west', ArrowRight: 'east' };
       if (directions[event.key]) {
         event.preventDefault();
@@ -204,25 +251,16 @@
     }
   }, true);
 
-  /* Existing workbench already supports additive selection via Ctrl/Shift click. Alt+click extends that to the current type. */
-  workspace.addEventListener('click', event => {
-    if (!desktop.matches || !event.altKey) return;
-    const object = event.target.closest?.('.tagro-existing,.draw-object');
-    if (!object) return;
-    setTimeout(() => $('#selectSame')?.click(), 0);
-  }, true);
-
-  /* A direct manipulation gesture: double-click a selected line/polygon to expose its edit handles. */
   workspace.addEventListener('dblclick', event => {
     if (!desktop.matches) return;
     const object = event.target.closest?.('.tagro-existing,.draw-object');
     if (!object) return;
     event.preventDefault();
     event.stopPropagation();
+    stopDirectMove();
     setTimeout(() => clickIfUsable('editSelected'), 0);
   }, true);
 
-  /* Do not let toolbar gestures fall through to the map and clear selection. */
   [quick, selection].forEach(bar => {
     ['pointerdown','dblclick'].forEach(type => bar.addEventListener(type, event => event.stopPropagation()));
   });
@@ -230,6 +268,9 @@
   const inspectorObserver = new MutationObserver(() => syncSelection());
   const inspector = $('#inspector');
   if (inspector) inspectorObserver.observe(inspector, { attributes:true, subtree:true, childList:true, characterData:true, attributeFilter:['class','hidden'] });
+  const statusObserver = new MutationObserver(cleanInspectorText);
+  const status = $('#status');
+  if (status) statusObserver.observe(status, { childList:true, characterData:true, subtree:true });
   const toolObserver = new MutationObserver(() => syncQuickActive());
   const dock = $('#toolDock');
   if (dock) toolObserver.observe(dock, { attributes:true, subtree:true, attributeFilter:['class'] });
@@ -242,5 +283,6 @@
 
   syncSelection();
   syncQuickActive();
+  cleanInspectorText();
   setTimeout(() => applyComposition(), 700);
 })();
