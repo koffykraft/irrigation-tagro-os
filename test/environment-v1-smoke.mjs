@@ -41,16 +41,34 @@ async function openChecked(browser, name, urlPath, check) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
   const errors = [];
+  let expectedStaticHealth404 = false;
+
   page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
+  page.on('response', response => {
+    const url = new URL(response.url());
+    if (url.pathname === '/health' && response.status() === 404 && base.startsWith('http://127.0.0.1:')) {
+      expectedStaticHealth404 = true;
+      return;
+    }
+    if (response.status() >= 400 && !/favicon/i.test(url.pathname)) {
+      errors.push(`http ${response.status()}: ${url.pathname}`);
+    }
+  });
   page.on('console', message => {
     if (message.type() === 'error') errors.push(`console: ${message.text()}`);
   });
+
   const response = await page.goto(`${base}${urlPath}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   assert(response?.ok(), `${name}: HTTP ${response?.status()}`);
   await page.waitForSelector('.tagro-appshell', { timeout: 15000 });
   await check(page);
   await page.screenshot({ path: path.join(artifacts, `${name}.png`), fullPage: false });
-  const relevantErrors = errors.filter(text => !/favicon/i.test(text));
+
+  const relevantErrors = errors.filter(text => {
+    if (/favicon/i.test(text)) return false;
+    if (expectedStaticHealth404 && /console: Failed to load resource/.test(text)) return false;
+    return true;
+  });
   assert(!relevantErrors.length, `${name}: browser errors:\n${relevantErrors.join('\n')}`);
   await context.close();
 }
