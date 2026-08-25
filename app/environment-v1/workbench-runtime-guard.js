@@ -1,6 +1,12 @@
 (() => {
   'use strict';
 
+  /* workbench-v2 currently contains one stale generated render call named updateInspector().
+     Current selection rendering is updateSelectionUI() and spatial-change already calls it after renderMap().
+     Keep this no-op global bridge until the generated source is normalized; it prevents the stale name
+     from aborting map initialization without creating a second selection implementation. */
+  if (typeof window.updateInspector !== 'function') window.updateInspector = () => {};
+
   const missing = [];
   if (!window.L) missing.push('Leaflet map library');
   if (window.L && !window.L.PM) missing.push('Leaflet-Geoman drawing library');
@@ -10,7 +16,8 @@
     ok,
     missing: [...missing],
     leaflet: window.L?.version || null,
-    geoman: window.L?.PM?.version || null
+    geoman: window.L?.PM?.version || null,
+    compatibility_hooks: ['updateInspector -> current updateSelectionUI path']
   };
 
   if (ok) return;
