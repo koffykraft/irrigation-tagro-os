@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f3f4f1">
+<title>TAGRO Irrigation · Page Set</title>
+<style>
+:root{--bg:#f3f4f1;--paper:#fff;--ink:#172019;--muted:#667068;--line:#d5dad5;--orange:#e86d25;--soft:#fff0e7}*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}a{color:inherit}.wrap{width:min(1040px,calc(100% - 28px));margin:0 auto;padding:28px 0 48px}.head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line);padding-bottom:18px}.eyebrow{font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--orange)}h1{font-size:clamp(28px,5vw,46px);line-height:1;margin:7px 0 8px;letter-spacing:-.035em}.head p{margin:0;color:var(--muted);font-size:14px;line-height:1.5;max-width:650px}.primary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:11px;background:var(--orange);color:#fff;text-decoration:none;font-weight:850;white-space:nowrap}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}.card{display:flex;min-height:150px;flex-direction:column;padding:16px;background:var(--paper);border:1px solid var(--line);border-radius:14px;text-decoration:none}.number{font-size:11px;font-weight:900;color:var(--muted)}.card b{font-size:21px;margin-top:15px}.card span{color:var(--muted);font-size:13px;line-height:1.45;margin-top:6px}.card strong{margin-top:auto;padding-top:15px;font-size:12px;color:#a84c17}.note{margin-top:14px;padding:13px 15px;border:1px solid #e2b89a;background:var(--soft);border-radius:12px;font-size:13px;line-height:1.45}.compat{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}.compat summary{cursor:pointer;font-weight:800;font-size:13px}.compat p{color:var(--muted);font-size:12px;line-height:1.45}.compat-links{display:flex;gap:8px;flex-wrap:wrap}.compat a{display:inline-flex;min-height:40px;align-items:center;padding:0 11px;border:1px solid var(--line);border-radius:9px;background:#fff;text-decoration:none;font-size:12px;font-weight:750}@media(max-width:760px){.wrap{width:min(100% - 18px,1040px);padding-top:16px}.head{display:block}.head .primary{margin-top:14px;width:100%}.grid{grid-template-columns:1fr 1fr}.card{min-height:132px}}@media(max-width:480px){.grid{grid-template-columns:1fr}.card{min-height:116px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <div>
+      <div class="eyebrow">TAGRO IRRIGATION</div>
+      <h1>Page set</h1>
+      <p>One irrigation job, six working pages. Information, geometry, advice, engineering and materials use the same job rather than separate copies.</p>
+    </div>
+    <a class="primary" href="./info.html">Start with Information</a>
+  </header>
+
+  <section class="grid" aria-label="Irrigation pages">
+    <a class="card" href="./info.html"><span class="number">01</span><b>Information</b><span>Customer, purpose, plots, crops, water, pump and site facts.</span><strong>Open Information →</strong></a>
+    <a class="card" href="./workbench.html?view=field"><span class="number">02</span><b>Field</b><span>Real map geometry, boundaries, site objects and pipe network.</span><strong>Open Field →</strong></a>
+    <a class="card" href="./workbench.html?view=drawing"><span class="number">03</span><b>Drawing</b><span>Clean engineering view of the same canonical Field objects and IDs.</span><strong>Open Drawing →</strong></a>
+    <a class="card" href="./index.html#adviser"><span class="number">04</span><b>Adviser</b><span>Ask questions, compare choices and preview proposals without silent design mutation.</span><strong>Open Adviser →</strong></a>
+    <a class="card" href="./index.html#design"><span class="number">05</span><b>Design</b><span>Measured network, explicit connections, deterministic checks and unresolved inputs.</span><strong>Open Design →</strong></a>
+    <a class="card" href="./index.html#materials"><span class="number">06</span><b>Materials</b><span>Measured material requirements, product resolution and commercial work as evidence allows.</span><strong>Open Materials →</strong></a>
+  </section>
+
+  <div class="note"><b>Same job throughout.</b> Moving between these pages must not create a new customer, field, drawing or material truth.</div>
+
+  <details class="compat">
+    <summary>Compatibility references</summary>
+    <p>These older direct surfaces remain available for comparison and recovery. They are not the primary page set.</p>
+    <div class="compat-links"><a href="./field-map.html">Compatibility Field</a><a href="./spatial-drawing.html">Compatibility Drawing</a></div>
+  </details>
+</main>
+</body>
+</html>
