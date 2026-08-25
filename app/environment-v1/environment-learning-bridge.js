@@ -139,7 +139,8 @@
         if (result?.ok) {
           event.preventDefault();
           event.stopImmediatePropagation();
-          location.href = `./field-map.html?proposal=${encodeURIComponent(proposal.proposal_id || "active")}`;
+          const query = new URLSearchParams({ view: "field", proposal: proposal.proposal_id || "active" });
+          location.href = `./workbench.html?${query}`;
           return;
         }
       }
