@@ -1,0 +1,27 @@
+(()=>{
+'use strict';
+const XL={version:'0.1.0',mode:'projection',nodeId:'irrigation.map',lastScan:null};
+const now=()=>new Date().toISOString();
+const uid=l=>l?.options?.tagroObjectId||(l.options.tagroObjectId='obj-'+Date.now()+'-'+Math.random().toString(36).slice(2,8));
+const identity=l=>l?.options?.tagroIdentityId||l?.options?.tagroType||null;
+const shape=l=>l?.options?.tagroShape||(l?.pm?.getShape?.()||'');
+const latlngs=l=>{try{const v=l.getLatLngs?.();if(v)return v;const p=l.getLatLng?.();return p?[p]:[]}catch(e){return[]}};
+const flat=a=>Array.isArray(a)?a.flat(Infinity).filter(x=>x&&Number.isFinite(x.lat)&&Number.isFinite(x.lng)):[];
+function meters(points){let n=0;for(let i=1;i<points.length;i++)n+=map.distance(points[i-1],points[i]);return n}
+function area(points){try{return points.length>2&&L?.GeometryUtil?.geodesicArea?L.GeometryUtil.geodesicArea(points):null}catch(e){return null}}
+function objectOf(l){const pts=flat(latlngs(l));const id=uid(l),type=identity(l),s=shape(l);return {id,type,shape:s,geometry:{points:pts.map(p=>({lat:p.lat,lng:p.lng})),length_m:meters(pts),area_m2:area(pts)},parent:l.options.tagroParentId||null,note:l.options.tagroNote||null,source:l.options.tagroSource||'map',status:l.options.tagroStatus||'observed'} }
+function layers(){const out=[];map.eachLayer(l=>{if(l?.options?.pmIgnore)return;if(l===window.locationMarker)return;if(l instanceof L.TileLayer)return;if(l.getLatLng||l.getLatLngs)out.push(l)});return out}
+function possibilities(o){if(o.type)return[];const s=o.shape;let p=[];if(['Polygon','Rectangle'].includes(s))p=['boundary','plot','section'];else if(s==='Line')p=['main','submain','lateral','road','measurement'];else if(['Marker','CircleMarker','Circle'].includes(s))p=['water','pump','filter','emitter','valve','plant','reference'];return p.map((type,i)=>({kind:'identity',object:o.id,type,confidence:i===0?.55:.35,reason:'Geometry permits this identity; user confirmation required.'}))}
+function topology(objects){const suggestions=[];const lines=objects.filter(o=>['main','submain','lateral'].includes(o.type));for(const o of lines){if(o.parent)continue;const wanted=o.type==='lateral'?['submain','main']:o.type==='submain'?['main']:[];if(!wanted.length)continue;const candidates=lines.filter(x=>x.id!==o.id&&wanted.includes(x.type));if(candidates.length)suggestions.push({kind:'parent',object:o.id,candidates:candidates.map(x=>x.id),reason:'Possible hydraulic parents from confirmed identities only. Proximity is not treated as a connection.',requires_authorisation:true})}return suggestions}
+function anticipations(objects){const a=[];for(const o of objects){if(!o.type)a.push({event:'unidentified-object',object:o.id,effect:'Cannot yet enter typed BOM/hydraulic reasoning.'});if(['main','submain','lateral'].includes(o.type)&&!o.parent)a.push({event:'parent-unconfirmed',object:o.id,effect:'Hydraulic ancestry remains open; no connection is assumed.'})}return a}
+function scenarios(objects){const unidentified=objects.filter(o=>!o.type).length;const laterals=objects.filter(o=>o.type==='lateral').length;return [{name:'As observed',formation:false,summary:`${objects.length} objects; ${unidentified} unidentified; ${laterals} laterals.`},{name:'Identify remaining geometry',formation:false,summary:unidentified?`${unidentified} objects can be classified without changing their geometry.`:'All current geometry is identified.'}]}
+function scan(){const objects=layers().map(objectOf);const result={engine:'XtraLogik Savant',version:XL.version,node:XL.nodeId,at:now(),mode:'projection-only',world:{map:{center:map.getCenter(),zoom:map.getZoom()},objects},possibilities:objects.flatMap(possibilities),eventAnticipations:anticipations(objects),logikalScenarios:scenarios(objects),topologySuggestions:topology(objects),rules:['Projection is not mutation.','Proximity is not a confirmed hydraulic connection.','Human confirmation is required before identity, parent, design, purchase or installation state changes.']};XL.lastScan=result;window.dispatchEvent(new CustomEvent('xtralogik:scan',{detail:result}));return result}
+function explain(id){const s=XL.lastScan||scan(),o=s.world.objects.find(x=>x.id===id);if(!o)return null;return {object:o,possibilities:s.possibilities.filter(x=>x.object===id),anticipations:s.eventAnticipations.filter(x=>x.object===id),topology:s.topologySuggestions.filter(x=>x.object===id)} }
+function authorise(action){if(!action||action.authorised!==true)throw new Error('XtraLogik action requires explicit authorised:true');window.dispatchEvent(new CustomEvent('xtralogik:authorised-action',{detail:action}));return {accepted:true,at:now(),action}}
+XL.scan=scan;XL.explain=explain;XL.authorise=authorise;XL.getWorld=()=>scan().world;
+window.XtraLogikSavant=XL;
+window.XtraLogikKodeks=window.XtraLogikKodeks||{nodes:new Map(),register(node){this.nodes.set(node.id,node);return node},scanAll(){return [...this.nodes.values()].map(n=>n.scan?.()).filter(Boolean)}};
+window.XtraLogikKodeks.register({id:XL.nodeId,kind:'map-access-node',capabilities:['observe','project','explain','anticipate'],scan,explain,act:authorise});
+['pm:create','pm:edit','pm:remove','zoomend','moveend'].forEach(ev=>map.on(ev,()=>{clearTimeout(XL._t);XL._t=setTimeout(scan,120)}));
+setTimeout(scan,0);
+})();
