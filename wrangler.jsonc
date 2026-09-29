@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tagro-irrigation",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-29",
+  "account_id": "e628ef4d67e78154f669ad421701f103",
+  "workers_dev": true
+}
